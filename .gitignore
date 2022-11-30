@@ -16,3 +16,4 @@ Cargo.lock
 .session
 
 inputs/*.txt
+.vscode
