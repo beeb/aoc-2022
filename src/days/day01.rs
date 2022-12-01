@@ -22,19 +22,19 @@ impl Day for Day01 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.000018s
+    /// Part 1 took 0.0000173s
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        sums(input).into_iter().max().unwrap_or(0)
+        sums(input).max().unwrap_or(0)
     }
 
     type Output2 = usize;
 
-    /// Part 2 took 0.0000114s
+    /// Part 2 took 0.0000103s
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        sums(input).iter().sorted().rev().take(3).sum()
+        sums(input).sorted().rev().take(3).sum()
     }
 }
 
-fn sums(input: &<Day01 as Day>::Input) -> Vec<usize> {
-    input.iter().map(|e| e.iter().sum()).collect()
+fn sums(input: &<Day01 as Day>::Input) -> impl Iterator<Item = usize> + '_ {
+    input.iter().map(|e| e.iter().sum())
 }
