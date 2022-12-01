@@ -55,11 +55,20 @@ pub trait Day {
             Ok(input) => {
                 let day_start = Instant::now();
                 println!("Part 1: {}", Self::part_1(&input));
-                println!("Part 1 took {}s", day_start.elapsed().as_secs_f32());
+                println!(
+                    "Part 1 took {}ms",
+                    day_start.elapsed().as_nanos() as f32 / 1_000_000.
+                );
                 let before2 = Instant::now();
                 println!("Part 2: {}", Self::part_2(&input));
-                println!("Part 2 took {}s", before2.elapsed().as_secs_f32());
-                println!("Day took {}s", day_start.elapsed().as_secs_f32());
+                println!(
+                    "Part 2 took {}ms",
+                    before2.elapsed().as_nanos() as f32 / 1_000_000.
+                );
+                println!(
+                    "Day took {}ms",
+                    day_start.elapsed().as_nanos() as f32 / 1_000_000.
+                );
             }
         }
     }

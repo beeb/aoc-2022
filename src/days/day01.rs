@@ -1,4 +1,4 @@
-use itertools::Itertools;
+//use itertools::Itertools;
 use nom::{
     character::complete::{line_ending, u32},
     combinator::map,
@@ -22,16 +22,34 @@ impl Day for Day01 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.0000173s
+    /// Part 1 took 0.0173ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         sums(input).max().unwrap_or(0)
     }
 
     type Output2 = usize;
 
-    /// Part 2 took 0.0000103s
-    fn part_2(input: &Self::Input) -> Self::Output2 {
+    /// Part 2 took 0.0103ms
+    /// This is my "naive" solution
+    /* fn part_2(input: &Self::Input) -> Self::Output2 {
         sums(input).sorted().rev().take(3).sum()
+    } */
+
+    /// Part 2 took 0.0042ms
+    /// This solution is more than twice as fast
+    /// Credits: https://github.com/Jayjader/rust-advent-of-code-2022/blob/main/src/main.rs
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut max = [0, 0, 0];
+        for calories in sums(input) {
+            if calories > max[0] {
+                // sorting guarantees that if calories is bigger than max[0] then it is among the top 3.
+                // conversely, sorting guarantees that max[0] is the smallest and thus should always be dropped
+                // when a new max is found.
+                max[0] = calories;
+                max.sort();
+            }
+        }
+        max.iter().sum()
     }
 }
 
