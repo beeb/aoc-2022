@@ -54,9 +54,8 @@ pub trait Day {
             Err(e) => println!("{:?}", e),
             Ok(input) => {
                 let day_start = Instant::now();
-                let before1 = Instant::now();
                 println!("Part 1: {}", Self::part_1(&input));
-                println!("Part 1 took {}s", before1.elapsed().as_secs_f32());
+                println!("Part 1 took {}s", day_start.elapsed().as_secs_f32());
                 let before2 = Instant::now();
                 println!("Part 2: {}", Self::part_2(&input));
                 println!("Part 2 took {}s", before2.elapsed().as_secs_f32());
