@@ -31,12 +31,7 @@ impl Day for Day01 {
 
     /// Part 2 took 0.0000114s
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        sums(input)
-            .iter()
-            .sorted()
-            .rev()
-            .take(3)
-            .fold(0, |acc, s| acc + s)
+        sums(input).iter().sorted().rev().take(3).sum()
     }
 }
 
