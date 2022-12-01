@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use nom::{
-    character::complete::{line_ending, u16},
+    character::complete::{line_ending, u32},
     combinator::map,
     multi::{count, separated_list0},
     IResult,
@@ -15,19 +16,28 @@ impl Day for Day01 {
     fn parse(input: &str) -> IResult<&str, Self::Input> {
         separated_list0(
             count(line_ending, 2),
-            separated_list0(line_ending, map(u16, |c| c as usize)),
+            separated_list0(line_ending, map(u32, |c| c as usize)),
         )(input)
     }
 
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        input.iter().map(|e| e.iter().sum()).max().unwrap_or(0)
+        sums(input).into_iter().max().unwrap_or(0)
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        0
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        sums(input)
+            .iter()
+            .sorted()
+            .rev()
+            .take(3)
+            .fold(0, |acc, s| acc + s)
     }
+}
+
+fn sums(input: &<Day01 as Day>::Input) -> Vec<usize> {
+    input.iter().map(|e| e.iter().sum()).collect()
 }
