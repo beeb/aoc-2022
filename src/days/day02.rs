@@ -58,6 +58,7 @@ impl Day for Day02 {
 
     type Output1 = isize;
 
+    /// Part 1 took 0.033ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut score = 0;
         for (elf, me) in parse_chars1(input) {
@@ -73,6 +74,7 @@ impl Day for Day02 {
 
     type Output2 = isize;
 
+    /// Part 2 took 0.0178ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // encoding the move to play in order to win or lose
         // index + 1 = elf's move, value at that index = my move
