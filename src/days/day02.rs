@@ -63,10 +63,9 @@ impl Day for Day02 {
         let mut score = 0;
         for (elf, me) in parse_chars1(input) {
             score += match me - elf {
-                2 | -1 => 0, // loss
                 -2 | 1 => 6, // win
                 0 => 3,      // draw if both values are the same
-                _ => unreachable!(),
+                _ => 0,      // loss
             } + me; // don't forget to add the score for my chosen move
         }
         score
