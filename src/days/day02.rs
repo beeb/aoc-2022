@@ -11,7 +11,7 @@ use crate::days::Day;
 
 pub struct Day02;
 
-fn parse_char(input: char) -> isize {
+fn parse_move(input: char) -> isize {
     match input {
         'A' | 'X' => 1,
         'B' | 'Y' => 2,
@@ -20,8 +20,23 @@ fn parse_char(input: char) -> isize {
     }
 }
 
+fn parse_outcome(input: char) -> isize {
+    match input {
+        'X' => 0,
+        'Y' => 3,
+        'Z' => 6,
+        _ => unreachable!(),
+    }
+}
+
 fn parse_chars(input: &[(char, char)]) -> impl Iterator<Item = (isize, isize)> + '_ {
-    input.iter().map(|(a, x)| (parse_char(*a), parse_char(*x)))
+    input.iter().map(|(a, x)| (parse_move(*a), parse_move(*x)))
+}
+
+fn parse_chars2(input: &[(char, char)]) -> impl Iterator<Item = (isize, isize)> + '_ {
+    input
+        .iter()
+        .map(|(a, x)| (parse_move(*a), parse_outcome(*x)))
 }
 
 impl Day for Day02 {
@@ -51,15 +66,27 @@ impl Day for Day02 {
                 -2 | 1 => 6,
                 0 => 3,
                 _ => unreachable!(),
-            };
-            score += me;
+            } + me;
         }
         score
     }
 
-    type Output2 = usize;
+    type Output2 = isize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        // index + 1 = elf's move, value = my move
+        let win = [2, 3, 1];
+        let lose = [3, 1, 2];
+        let mut score = 0;
+        for (elf, outcome) in parse_chars2(input) {
+            let me = match outcome {
+                0 => *lose.get((elf - 1) as usize).unwrap(),
+                3 => elf,
+                6 => *win.get((elf - 1) as usize).unwrap(),
+                _ => unreachable!(),
+            };
+            score += me + outcome
+        }
+        score
     }
 }
