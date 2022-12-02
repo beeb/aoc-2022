@@ -29,7 +29,7 @@ fn parse_outcome(input: char) -> isize {
     }
 }
 
-fn parse_chars(input: &[(char, char)]) -> impl Iterator<Item = (isize, isize)> + '_ {
+fn parse_chars1(input: &[(char, char)]) -> impl Iterator<Item = (isize, isize)> + '_ {
     input.iter().map(|(a, x)| (parse_move(*a), parse_move(*x)))
 }
 
@@ -60,13 +60,13 @@ impl Day for Day02 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut score = 0;
-        for (elf, me) in parse_chars(input) {
+        for (elf, me) in parse_chars1(input) {
             score += match me - elf {
-                2 | -1 => 0,
-                -2 | 1 => 6,
-                0 => 3,
+                2 | -1 => 0, // loss
+                -2 | 1 => 6, // win
+                0 => 3,      // draw if both values are the same
                 _ => unreachable!(),
-            } + me;
+            } + me; // don't forget to add the score for my chosen move
         }
         score
     }
@@ -74,15 +74,17 @@ impl Day for Day02 {
     type Output2 = isize;
 
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        // index + 1 = elf's move, value = my move
+        // encoding the move to play in order to win or lose
+        // index + 1 = elf's move, value at that index = my move
         let win = [2, 3, 1];
         let lose = [3, 1, 2];
         let mut score = 0;
+        // we parse the input with each entry being a tuple containing the elf's move and the outcome's score
         for (elf, outcome) in parse_chars2(input) {
             let me = match outcome {
-                0 => *lose.get((elf - 1) as usize).unwrap(),
-                3 => elf,
-                6 => *win.get((elf - 1) as usize).unwrap(),
+                0 => lose[(elf - 1) as usize],
+                3 => elf, // for a draw, we have to play the same move as the elf
+                6 => win[(elf - 1) as usize],
                 _ => unreachable!(),
             };
             score += me + outcome
