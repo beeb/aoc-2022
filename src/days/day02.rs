@@ -83,13 +83,13 @@ impl Day for Day02 {
         let mut score = 0;
         // we parse the input with each entry being a tuple containing the elf's move and the outcome's score
         for (elf, outcome) in parse_chars2(input) {
-            let me = match outcome {
+            score += match outcome {
+                // check which move to play
                 0 => lose[(elf - 1) as usize],
                 3 => elf, // for a draw, we have to play the same move as the elf
                 6 => win[(elf - 1) as usize],
                 _ => unreachable!(),
-            };
-            score += me + outcome
+            } + outcome; // and add the outcome score
         }
         score
     }
