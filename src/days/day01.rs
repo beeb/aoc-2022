@@ -30,7 +30,6 @@ impl Day for Day01 {
     type Output2 = usize;
 
     /// Part 2 took 0.0103ms
-    /// This is my "naive" solution
     ///
     /// Documenting a very nice solution provided by Jayjader at
     /// https://github.com/Jayjader/rust-advent-of-code-2022/blob/main/src/main.rs
@@ -50,6 +49,7 @@ impl Day for Day01 {
     /// max.iter().sum()
     /// ```
     ///
+    /// This is my "naive" solution
     fn part_2(input: &Self::Input) -> Self::Output2 {
         sums(input).sorted().rev().take(3).sum()
     }
