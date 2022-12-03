@@ -9,7 +9,7 @@ use crate::days::Day;
 
 pub struct Day03;
 
-fn parse_line(input: &str) -> IResult<&str, (Vec<u8>, Vec<u8>)> {
+fn parse_line(input: &str) -> IResult<&str, Vec<u8>> {
     let (rest, s) = alpha1(input)?;
     let chars: Vec<u8> = s
         .chars()
@@ -20,12 +20,11 @@ fn parse_line(input: &str) -> IResult<&str, (Vec<u8>, Vec<u8>)> {
             (c as u8) - 96
         })
         .collect();
-    let mid = chars.len() / 2;
-    Ok((rest, (chars[..mid].to_vec(), chars[mid..].to_vec())))
+    Ok((rest, chars))
 }
 
 impl Day for Day03 {
-    type Input = Vec<(Vec<u8>, Vec<u8>)>;
+    type Input = Vec<Vec<u8>>;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
         separated_list0(line_ending, parse_line)(input)
@@ -36,14 +35,31 @@ impl Day for Day03 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         input
             .iter()
-            .flat_map(|rs| rs.0.iter().filter(|e| rs.1.contains(e)).dedup())
-            .map(|e| *e as usize)
+            .map(|rs| {
+                let mid = rs.len() / 2;
+                (rs[..mid].to_vec(), rs[mid..].to_vec())
+            })
+            .flat_map(|rs| rs.0.into_iter().filter(move |e| rs.1.contains(e)).dedup())
+            .map(|e| e as usize)
             .sum::<usize>()
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let dedup = input
+            .iter()
+            .map(|rs| rs.iter().sorted().dedup().collect_vec())
+            .collect_vec();
+        let test = dedup
+            .chunks_exact(3)
+            .map(|gr| {
+                let mut counts = gr.concat().into_iter().counts();
+                counts.retain(|_, v| v == &3);
+                let item = counts.keys().next().unwrap();
+                **item
+            })
+            .collect_vec();
+        test.iter().map(|e| *e as usize).sum()
     }
 }
