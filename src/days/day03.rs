@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+//use std::collections::HashSet;
 
 use itertools::Itertools;
 use nom::{
@@ -50,22 +50,44 @@ impl Day for Day03 {
     /// ```
     ///
     ///
-    /// First ugly version but quite fast
-    /// Part 1 took 0.057ms
-    fn part_1(input: &Self::Input) -> Self::Output1 {
-        input
-            .iter()
-            .map(|rs| {
-                // split each line into 2 equal parts
-                let mid = rs.len() / 2;
-                (rs[..mid].to_vec(), rs[mid..].to_vec())
-            })
-            .flat_map(|rs| {
-                // only keep items from first half that appear in second half (and dedup)
-                rs.0.into_iter().filter(move |e| rs.1.contains(e)).dedup()
-            })
-            .map(|e| e as usize) // cast to usize for summing
-            .sum::<usize>()
+    /// First ugly version but quite fast, functional style
+    /// took 0.057ms
+    /// ```
+    /// fn part_1(input: &Self::Input) -> Self::Output1 {
+    ///     input
+    ///         .iter()
+    ///         .map(|rs| {
+    ///             // split each line into 2 equal parts
+    ///             let mid = rs.len() / 2;
+    ///             (rs[..mid].to_vec(), rs[mid..].to_vec())
+    ///         })
+    ///         .flat_map(|rs| {
+    ///             // only keep items from first half that appear in second half (and dedup)
+    ///             rs.0.into_iter().filter(move |e| rs.1.contains(e)).dedup()
+    ///         })
+    ///         .map(|e| e as usize) // cast to usize for summing
+    ///         .sum::<usize>()
+    /// }
+    /// ```
+    ///
+    ///
+    /// A bit faster and looks neater with nested loops
+    /// Part 1 took 0.0349ms
+    fn part_1(input: &Self::Input) -> Self::Output2 {
+        let mut total = 0;
+        for rs in input {
+            // for each rucksack
+            let mid = rs.len() / 2;
+            for item in &rs[..mid] {
+                // for each item in first compartment
+                if rs[mid..].contains(item) {
+                    // if it's also in second compartment, we sum it
+                    total += *item as usize;
+                    break; // break to avoid duplicates
+                }
+            }
+        }
+        total
     }
 
     type Output2 = usize;
@@ -92,23 +114,43 @@ impl Day for Day03 {
     /// }
     /// ```
     ///
+    ///
     /// After some optimization, here hashset is beneficial
-    /// Part 2 took 0.2253ms
+    /// took 0.2253ms
+    /// ```
+    /// fn part_2(input: &Self::Input) -> Self::Output2 {
+    ///     let mut total = 0;
+    ///     // we loop in groups of 3
+    ///     for gr in input
+    ///         .iter()
+    ///         .map(|rs| HashSet::from_iter(rs.iter())) // we create hashsets to dedup
+    ///         .collect_vec() // vec of hashsets
+    ///         .chunks_exact(3)
+    ///     {
+    ///         // intersection of the first two sets, collected into another hashset
+    ///         let common: HashSet<_> = gr[0].intersection(&gr[1]).cloned().collect();
+    ///         // intersection with the last set (no collecting, so it's an iterator)
+    ///         let mut common = common.intersection(&gr[2]);
+    ///         // first item in the iterator is the value that was present in all 3 sets
+    ///         total += **(common.next().unwrap()) as usize
+    ///     }
+    ///     total
+    /// }
+    /// ```
+    ///
+    ///
+    /// Finally using `contains` and a nested loop is even better
+    /// Part 2 took 0.0206ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut total = 0;
         // we loop in groups of 3
-        for gr in input
-            .iter()
-            .map(|rs| HashSet::from_iter(rs.iter())) // we create hashsets to dedup
-            .collect_vec() // vec of hashsets
-            .chunks_exact(3)
-        {
-            // intersection of the first two sets, collected into another hashset
-            let common: HashSet<_> = gr[0].intersection(&gr[1]).cloned().collect();
-            // intersection with the last set (no collecting, so it's an iterator)
-            let mut common = common.intersection(&gr[2]);
-            // first item in the iterator is the value that was present in all 3 sets
-            total += **(common.next().unwrap()) as usize
+        for gr in input.chunks_exact(3) {
+            for item in &gr[0] {
+                if gr[1].contains(item) && gr[2].contains(item) {
+                    total += *item as usize;
+                    break; // break early for perf
+                }
+            }
         }
         total
     }
