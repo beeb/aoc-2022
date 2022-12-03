@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use nom::{
     character::complete::{alpha1, line_ending},
+    combinator::map,
     multi::separated_list0,
     IResult,
 };
@@ -9,25 +10,23 @@ use crate::days::Day;
 
 pub struct Day03;
 
-fn parse_line(input: &str) -> IResult<&str, Vec<u8>> {
-    let (rest, s) = alpha1(input)?;
-    let chars: Vec<u8> = s
-        .chars()
-        .map(|c| {
-            if c.is_uppercase() {
-                return (c as u8) - 38;
-            }
-            (c as u8) - 96
-        })
-        .collect();
-    Ok((rest, chars))
-}
-
 impl Day for Day03 {
     type Input = Vec<Vec<u8>>;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
-        separated_list0(line_ending, parse_line)(input)
+        separated_list0(
+            line_ending,
+            map(alpha1, |s: &str| {
+                s.chars()
+                    .map(|c| {
+                        if c.is_uppercase() {
+                            return (c as u8) - 38;
+                        }
+                        (c as u8) - 96
+                    })
+                    .collect_vec()
+            }),
+        )(input)
     }
 
     type Output1 = usize;
