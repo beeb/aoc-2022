@@ -100,7 +100,7 @@ impl Day for Day03 {
     ///         .iter()
     ///         .map(|rs| rs.iter().sorted().dedup().collect_vec()) // dedup each line
     ///         .collect_vec();
-    ///     let test = dedup
+    ///     let groups = dedup
     ///         .chunks_exact(3) // loop in groups of 3
     ///         .map(|gr| {
     ///             // get how many times each item appears in the concatenated 3 lines
@@ -110,7 +110,7 @@ impl Day for Day03 {
     ///             **item
     ///         })
     ///         .collect_vec();
-    ///     test.iter().map(|e| *e as usize).sum()
+    ///     groups.iter().map(|e| *e as usize).sum()
     /// }
     /// ```
     ///
