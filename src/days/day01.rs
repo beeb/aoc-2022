@@ -29,8 +29,6 @@ impl Day for Day01 {
 
     type Output2 = usize;
 
-    /// Part 2 took 0.0103ms
-    ///
     /// Documenting a very nice solution provided by Jayjader at
     /// https://github.com/Jayjader/rust-advent-of-code-2022/blob/main/src/main.rs
     /// which is twice as fast, runs in 0.0042ms on my machine.
@@ -50,6 +48,7 @@ impl Day for Day01 {
     /// ```
     ///
     /// This is my "naive" solution
+    /// Part 2 took 0.0103ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         sums(input).sorted().rev().take(3).sum()
     }
