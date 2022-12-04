@@ -1,20 +1,54 @@
-use nom::IResult;
+use nom::{
+    character::complete::{char, line_ending, u8},
+    multi::separated_list0,
+    sequence::tuple,
+    IResult,
+};
 
 use crate::days::Day;
 
 pub struct Day04;
 
-impl Day for Day04 {
-    type Input = String;
+#[derive(Debug)]
+pub struct Range {
+    pub start: u8,
+    pub end: u8,
+}
 
-    fn parse(_input: &str) -> IResult<&str, Self::Input> {
-        unimplemented!("parser")
+#[derive(Debug)]
+pub struct Pair {
+    pub first: Range,
+    pub second: Range,
+}
+
+fn parse_range(input: &str) -> IResult<&str, Range> {
+    let (rest, (start, _, end)) = tuple((u8, char('-'), u8))(input)?;
+    Ok((rest, Range { start, end }))
+}
+
+fn parse_pair(input: &str) -> IResult<&str, Pair> {
+    let (rest, (first, _, second)) = tuple((parse_range, char(','), parse_range))(input)?;
+    Ok((rest, Pair { first, second }))
+}
+
+impl Pair {
+    pub fn fully_contained(&self) -> bool {
+        (self.first.start <= self.second.start && self.first.end >= self.second.end)
+            || (self.first.start >= self.second.start && self.first.end <= self.second.end)
+    }
+}
+
+impl Day for Day04 {
+    type Input = Vec<Pair>;
+
+    fn parse(input: &str) -> IResult<&str, Self::Input> {
+        separated_list0(line_ending, parse_pair)(input)
     }
 
     type Output1 = usize;
 
-    fn part_1(_input: &Self::Input) -> Self::Output1 {
-        unimplemented!("part_1")
+    fn part_1(input: &Self::Input) -> Self::Output1 {
+        input.iter().map(|p| p.fully_contained() as usize).sum()
     }
 
     type Output2 = usize;
