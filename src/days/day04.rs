@@ -36,6 +36,10 @@ impl Pair {
         (self.first.start <= self.second.start && self.first.end >= self.second.end)
             || (self.first.start >= self.second.start && self.first.end <= self.second.end)
     }
+
+    pub fn overlaps(&self) -> bool {
+        self.first.end >= self.second.start && self.first.start <= self.second.end
+    }
 }
 
 impl Day for Day04 {
@@ -53,7 +57,7 @@ impl Day for Day04 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        input.iter().map(|p| p.overlaps() as usize).sum()
     }
 }
