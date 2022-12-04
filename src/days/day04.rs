@@ -51,15 +51,17 @@ impl Day for Day04 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.0189ms
+    /// Part 1 took 0.015ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        input.iter().map(|p| p.fully_contained() as usize).sum()
+        input
+            .iter()
+            .fold(0, |acc, p| acc + p.fully_contained() as usize)
     }
 
     type Output2 = usize;
 
     /// Part 2 took 0.0015ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        input.iter().map(|p| p.overlaps() as usize).sum()
+        input.iter().fold(0, |acc, p| acc + p.overlaps() as usize)
     }
 }
