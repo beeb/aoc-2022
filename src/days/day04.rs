@@ -9,6 +9,16 @@ use crate::days::Day;
 
 pub struct Day04;
 
+fn parse_range(input: &str) -> IResult<&str, Range> {
+    let (rest, (start, _, end)) = tuple((u8, char('-'), u8))(input)?;
+    Ok((rest, Range { start, end }))
+}
+
+fn parse_pair(input: &str) -> IResult<&str, Pair> {
+    let (rest, (first, _, second)) = tuple((parse_range, char(','), parse_range))(input)?;
+    Ok((rest, Pair { first, second }))
+}
+
 #[derive(Debug)]
 pub struct Range {
     pub start: u8,
@@ -19,16 +29,6 @@ pub struct Range {
 pub struct Pair {
     pub first: Range,
     pub second: Range,
-}
-
-fn parse_range(input: &str) -> IResult<&str, Range> {
-    let (rest, (start, _, end)) = tuple((u8, char('-'), u8))(input)?;
-    Ok((rest, Range { start, end }))
-}
-
-fn parse_pair(input: &str) -> IResult<&str, Pair> {
-    let (rest, (first, _, second)) = tuple((parse_range, char(','), parse_range))(input)?;
-    Ok((rest, Pair { first, second }))
 }
 
 impl Pair {
