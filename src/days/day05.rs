@@ -23,7 +23,7 @@ pub struct Move {
     pub to: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct State {
     /// Each stack is represented as a double-ended queue, where the front is the bottom and the back is the top
     pub stacks: RefCell<[VecDeque<char>; NUM_STACKS]>,
@@ -33,13 +33,6 @@ pub struct State {
 impl State {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    pub fn clone(&self) -> Self {
-        Self {
-            stacks: self.stacks.clone(),
-            moves: self.moves.clone(),
-        }
     }
 
     /// Fill the stacks with the input data, from the front so the order is preserved
