@@ -144,6 +144,7 @@ impl Day for Day05 {
 
     type Output1 = String;
 
+    /// Part 1 took 0.020906ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut state = input.clone(); // get a copy of the state
         for m in state.moves.clone() {
@@ -154,6 +155,7 @@ impl Day for Day05 {
 
     type Output2 = String;
 
+    /// Part 2 took 0.013784ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut state = input.clone(); // get a copy of the state
         for m in state.moves.clone() {
