@@ -47,11 +47,19 @@ impl State {
         self
     }
 
-    pub fn move_crates(&mut self, amount: usize, from: usize, to: usize) -> &mut Self {
+    pub fn move_crates_9000(&mut self, amount: usize, from: usize, to: usize) -> &mut Self {
         for _ in 0..amount {
             let c = self.stacks[from - 1].pop_back().unwrap();
             self.stacks[to - 1].push_back(c);
         }
+        self
+    }
+
+    pub fn move_crates_9001(&mut self, amount: usize, from: usize, to: usize) -> &mut Self {
+        let from_len = self.stacks[from - 1].len();
+        let mut mov = self.stacks[from - 1].split_off(from_len - amount);
+        assert!(mov.len() == amount);
+        self.stacks[to - 1].append(&mut mov);
         self
     }
 }
@@ -102,14 +110,18 @@ impl Day for Day05 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut state = input.clone();
         for m in state.moves.clone() {
-            state.move_crates(m.amount, m.from, m.to);
+            state.move_crates_9000(m.amount, m.from, m.to);
         }
         state.stacks.iter().map(|s| s.back().unwrap()).collect()
     }
 
     type Output2 = String;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut state = input.clone();
+        for m in state.moves.clone() {
+            state.move_crates_9001(m.amount, m.from, m.to);
+        }
+        state.stacks.iter().map(|s| s.back().unwrap()).collect()
     }
 }
