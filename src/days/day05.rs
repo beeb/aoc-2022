@@ -72,7 +72,10 @@ impl State {
     /// We choose to split at the highest index between `from` and `to`, so that the first element in the
     /// second slice is the stack referring to max(from, to) and both stacks of interest are in different slices.
     pub fn move_crates_9001(&self, amount: usize, from: usize, to: usize) -> &Self {
-        assert!(from != to); // one of the unwraps below would fail if `from` == `to`
+        if from == to {
+            // no operation needed
+            return self;
+        }
         let mut stacks = self.stacks.borrow_mut();
         if from > to {
             let (half_to, half_from) = stacks.split_at_mut(from - 1);
