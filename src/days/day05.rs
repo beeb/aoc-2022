@@ -1,23 +1,113 @@
-use nom::IResult;
+use std::collections::VecDeque;
+
+use itertools::enumerate;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{anychar, char, line_ending, u32},
+    combinator::map,
+    multi::separated_list0,
+    sequence::tuple,
+    IResult,
+};
 
 use crate::days::Day;
 
+const NUM_STACKS: usize = 9;
+
 pub struct Day05;
 
+#[derive(Debug, Clone)]
+pub struct Move {
+    pub amount: usize,
+    pub from: usize,
+    pub to: usize,
+}
+
+#[derive(Default, Debug, Clone)]
+pub struct State {
+    pub stacks: [VecDeque<char>; NUM_STACKS],
+    pub moves: Vec<Move>,
+}
+
+impl State {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn clone(&self) -> Self {
+        Self {
+            stacks: self.stacks.clone(),
+            moves: self.moves.clone(),
+        }
+    }
+
+    pub fn push_crate_front(&mut self, stack: usize, id: char) -> &mut Self {
+        self.stacks.get_mut(stack).unwrap().push_front(id);
+        self
+    }
+
+    pub fn move_crates(&mut self, amount: usize, from: usize, to: usize) -> &mut Self {
+        for _ in 0..amount {
+            let c = self.stacks[from - 1].pop_back().unwrap();
+            self.stacks[to - 1].push_back(c);
+        }
+        self
+    }
+}
+
 impl Day for Day05 {
-    type Input = String;
+    type Input = State;
 
-    fn parse(_input: &str) -> IResult<&str, Self::Input> {
-        unimplemented!("parser")
+    fn parse(input: &str) -> IResult<&str, Self::Input> {
+        let mut state = State::new();
+        let (rest, stacks) = separated_list0(
+            line_ending,
+            separated_list0(
+                char(' '),
+                alt((
+                    tuple((char(' '), char(' '), char(' '))),
+                    tuple((char('['), anychar, char(']'))),
+                )),
+            ),
+        )(input)?;
+        for layer in stacks {
+            for (i, (_, c, _)) in enumerate(layer) {
+                match c {
+                    ' ' => {}
+                    c => {
+                        state.push_crate_front(i, c);
+                    }
+                }
+            }
+        }
+        let (rest, _) = tag(" 1   2   3   4   5   6   7   8   9 \n\n")(rest)?;
+        let (rest, moves) = separated_list0(
+            line_ending,
+            map(
+                tuple((tag("move "), u32, tag(" from "), u32, tag(" to "), u32)),
+                |(_, amount, _, from, _, to)| Move {
+                    amount: amount as usize,
+                    from: from as usize,
+                    to: to as usize,
+                },
+            ),
+        )(rest)?;
+        state.moves = moves;
+        Ok((rest, state))
     }
 
-    type Output1 = usize;
+    type Output1 = String;
 
-    fn part_1(_input: &Self::Input) -> Self::Output1 {
-        unimplemented!("part_1")
+    fn part_1(input: &Self::Input) -> Self::Output1 {
+        let mut state = input.clone();
+        for m in state.moves.clone() {
+            state.move_crates(m.amount, m.from, m.to);
+        }
+        state.stacks.iter().map(|s| s.back().unwrap()).collect()
     }
 
-    type Output2 = usize;
+    type Output2 = String;
 
     fn part_2(_input: &Self::Input) -> Self::Output2 {
         unimplemented!("part_2")
