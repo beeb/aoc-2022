@@ -58,7 +58,6 @@ impl State {
     pub fn move_crates_9001(&mut self, amount: usize, from: usize, to: usize) -> &mut Self {
         let from_len = self.stacks[from - 1].len();
         let mut mov = self.stacks[from - 1].split_off(from_len - amount);
-        assert!(mov.len() == amount);
         self.stacks[to - 1].append(&mut mov);
         self
     }
