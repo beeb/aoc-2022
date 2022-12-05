@@ -23,7 +23,7 @@ pub struct Move {
     pub to: usize,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct State {
     /// Each stack is represented as a double-ended queue, where the front is the bottom and the back is the top
     pub stacks: RefCell<[VecDeque<char>; NUM_STACKS]>,
