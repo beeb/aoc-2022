@@ -62,6 +62,7 @@ impl State {
     /// In the second part, we move the crates in batches of `amount`.
     ///
     /// Cleaner-looking version where an intermediary VecDeque is created to hold the moved crates.
+    #[allow(dead_code)]
     pub fn move_crates_9001b(&self, amount: usize, from: usize, to: usize) -> &Self {
         let mut stacks = self.stacks.borrow_mut();
         let from_len = stacks[from - 1].len();
