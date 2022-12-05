@@ -151,7 +151,7 @@ impl Day for Day05 {
 
     /// Part 1 took 0.020906ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        let state = input.clone(); // get a copy of the state
+        let state = input.clone(); // get a copy of the state (we don't want to affect part 2)
         for m in &state.moves {
             state.move_crates_9000(m.amount, m.from, m.to);
         }
@@ -163,7 +163,7 @@ impl Day for Day05 {
 
     /// Part 2 took 0.013784ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        let state = input.clone(); // get a copy of the state
+        let state = input.clone(); // get a copy of the state (just in case)
         for m in &state.moves {
             state.move_crates_9001(m.amount, m.from, m.to);
         }
