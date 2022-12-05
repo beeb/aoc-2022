@@ -84,26 +84,26 @@ impl State {
             let (half_to, half_from) = stacks.split_at_mut(from - 1);
             let from_stack = half_from.first_mut().unwrap();
             let to_stack = half_to.get_mut(to - 1).unwrap();
-            move_crates_with_stacks(from_stack, to_stack, amount);
+            Self::move_crates_with_stacks(from_stack, to_stack, amount);
         } else {
             let (half_from, half_to) = stacks.split_at_mut(to - 1);
             let to_stack = half_to.first_mut().unwrap();
             let from_stack = half_from.get_mut(from - 1).unwrap();
-            move_crates_with_stacks(from_stack, to_stack, amount);
+            Self::move_crates_with_stacks(from_stack, to_stack, amount);
         }
         self
     }
-}
 
-/// Get an iterator for the last `amount` elements of the first stack, and push them directly onto the second stack
-fn move_crates_with_stacks(
-    from_stack: &mut VecDeque<char>,
-    to_stack: &mut VecDeque<char>,
-    amount: usize,
-) {
-    from_stack
-        .drain(from_stack.len() - amount..)
-        .for_each(|c| to_stack.push_back(c));
+    /// Get an iterator for the last `amount` elements of the first stack, and push them directly onto the second stack
+    fn move_crates_with_stacks(
+        from_stack: &mut VecDeque<char>,
+        to_stack: &mut VecDeque<char>,
+        amount: usize,
+    ) {
+        from_stack
+            .drain(from_stack.len() - amount..)
+            .for_each(|c| to_stack.push_back(c));
+    }
 }
 
 impl Day for Day05 {
