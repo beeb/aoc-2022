@@ -25,7 +25,12 @@ impl Day for Day06 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        for (i, seq) in input.as_bytes().windows(14).enumerate() {
+            if seq.iter().all_unique() {
+                return i + 14;
+            }
+        }
+        0
     }
 }
