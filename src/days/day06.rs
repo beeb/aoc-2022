@@ -9,7 +9,7 @@ fn pos_of_unique_pattern(input: &[u8], len: usize) -> usize {
     assert!(len > 0);
     for (i, seq) in input.windows(len).enumerate() {
         if seq.iter().all_unique() {
-            return (i + len) as usize;
+            return i + len;
         }
     }
     0 // sentinel value for not found (minimum is otherwise `len`)
