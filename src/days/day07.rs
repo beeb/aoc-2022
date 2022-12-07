@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use itertools::Itertools;
 use nom::{
@@ -51,6 +51,49 @@ fn parse_line(input: &str) -> IResult<&str, LogItem> {
     ))(input)
 }
 
+fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
+    // mapping of path to folder size (the initial '/' is ignored)
+    let mut sizes: HashMap<String, usize> = HashMap::new();
+    // keep track of the current directoy as a vec of folder names
+    let mut cd: Vec<&str> = vec![];
+    for item in input {
+        match item {
+            LogItem::Change(dir) => match dir.as_str() {
+                // when changing directories, we either push or pop on the cd vec
+                ".." => {
+                    cd.pop();
+                }
+                "/" => {}
+                dir => {
+                    cd.push(dir);
+                }
+            },
+            LogItem::Dir(_) => {
+                // no action needed
+            }
+            LogItem::File(file) => {
+                // for each file, we add its size to all the parent directories
+                for i in 1..=cd.len() {
+                    let parent_path = cd.iter().take(i).join("/");
+                    let parent_size = sizes.entry(parent_path).or_insert(0);
+                    *parent_size += file.size;
+                }
+            }
+            LogItem::List => {
+                // no action needed
+            }
+        }
+    }
+    sizes
+}
+
+fn get_total_size(input: &<Day07 as Day>::Input) -> usize {
+    input.iter().fold(0, |acc, i| match i {
+        LogItem::File(f) => acc + f.size,
+        _ => acc,
+    })
+}
+
 impl Day for Day07 {
     type Input = Vec<LogItem>;
 
@@ -60,46 +103,25 @@ impl Day for Day07 {
 
     type Output1 = usize;
 
+    /// Part 1 took 0.10672ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        // mapping of path to folder size (the initial '/' is ignored)
-        let mut sizes: BTreeMap<String, usize> = BTreeMap::new();
-        // keep track of the current directoy as a vec of folder names
-        let mut cd: Vec<&str> = vec![];
-        for item in input {
-            match item {
-                LogItem::Change(dir) => match dir.as_str() {
-                    // when changing directories, we either push or pop on the cd vec
-                    ".." => {
-                        cd.pop();
-                    }
-                    "/" => {}
-                    dir => {
-                        cd.push(dir);
-                    }
-                },
-                LogItem::Dir(_) => {
-                    // no action needed
-                }
-                LogItem::File(file) => {
-                    // for each file, we add its size to all the parent directories
-                    for i in 1..=cd.len() {
-                        let parent_path = cd.iter().take(i).join("/");
-                        let parent_size = sizes.entry(parent_path).or_insert(0);
-                        *parent_size += file.size;
-                    }
-                }
-                LogItem::List => {
-                    // no action needed
-                }
-            }
-        }
-        sizes.retain(|_, &mut v| v <= 100_000);
-        sizes.iter().fold(0, |acc, (_, v)| acc + v)
+        get_sizes(input)
+            .iter()
+            .fold(0, |acc, (_, &v)| if v <= 100_000 { acc + v } else { acc })
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    // Part 2 took 0.116058ms
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let sizes = get_sizes(input);
+        let total_size = get_total_size(input);
+        let free_space = 70_000_000 - total_size;
+        let to_be_freed = 30_000_000 - free_space;
+        *sizes
+            .values()
+            .sorted()
+            .find(|a| *a >= &to_be_freed)
+            .unwrap()
     }
 }
