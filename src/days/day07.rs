@@ -62,10 +62,14 @@ fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
             }
             LogItem::File(size) => {
                 // for each file, we add its size to all the parent directories
-                for i in 1..=cd.len() {
-                    let parent_path = cd.iter().take(i).join("/");
-                    let parent_size = sizes.entry(parent_path).or_insert(0);
-                    *parent_size += size;
+                let mut ancestor_path = String::new();
+                for segment in &cd {
+                    if !ancestor_path.is_empty() {
+                        ancestor_path.push('/');
+                    }
+                    ancestor_path.push_str(segment);
+                    let ancestor_size = sizes.entry(ancestor_path.clone()).or_insert(0);
+                    *ancestor_size += size;
                 }
             }
             LogItem::List => {
@@ -92,7 +96,7 @@ impl Day for Day07 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.10672ms
+    /// Part 1 took 0.073969ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         get_sizes(input) // our map of path to dir size
             .iter()
@@ -108,7 +112,7 @@ impl Day for Day07 {
 
     type Output2 = usize;
 
-    // Part 2 took 0.116058ms
+    // Part 2 took 0.07946ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let sizes = get_sizes(input); // our map of path to dir size
         let total_size = get_total_size(input);
