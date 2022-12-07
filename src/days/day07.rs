@@ -1,3 +1,6 @@
+use std::collections::BTreeMap;
+
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -33,7 +36,7 @@ fn parse_line(input: &str) -> IResult<&str, LogItem> {
             |(_, dir)| LogItem::Change(dir.to_string()),
         ),
         map(tag("$ ls"), |_| LogItem::List),
-        map(pair(tag("dir"), not_line_ending::<&str, _>), |(_, dir)| {
+        map(pair(tag("dir "), not_line_ending::<&str, _>), |(_, dir)| {
             LogItem::Dir(dir.to_string())
         }),
         map(
@@ -58,8 +61,36 @@ impl Day for Day07 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        println!("{input:#?}");
-        0
+        let mut sizes: BTreeMap<String, usize> = BTreeMap::new();
+        let mut cd: Vec<&str> = vec![];
+        for item in input {
+            let cd_path = cd.join("/");
+            match item {
+                LogItem::Change(dir) => match dir.as_str() {
+                    ".." => {
+                        cd.pop();
+                    }
+                    "/" => {}
+                    dir => {
+                        cd.push(dir);
+                    }
+                },
+                LogItem::Dir(dir) => {
+                    let path = format!("{cd_path}/{dir}");
+                    sizes.entry(path).or_insert(0);
+                }
+                LogItem::File(file) => {
+                    for i in 1..=cd.len() {
+                        let parent_path = cd.iter().take(i).join("/");
+                        let parent_size = sizes.entry(parent_path).or_insert(0);
+                        *parent_size += file.size;
+                    }
+                }
+                LogItem::List => {}
+            }
+        }
+        sizes.retain(|_, &mut v| v <= 100_000);
+        sizes.iter().fold(0, |acc, (_, v)| acc + v)
     }
 
     type Output2 = usize;
