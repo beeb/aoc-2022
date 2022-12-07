@@ -47,18 +47,17 @@ fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
     let mut cd: Vec<&str> = vec![];
     for item in input {
         match item {
-            LogItem::Change(dir) => match dir.as_str() {
-                // when changing directories, we either push or pop on the cd vec
-                ".." => {
-                    cd.pop();
+            LogItem::Change(dir) => {
+                match dir.as_str() {
+                    // when changing directories, we either push or pop on the cd vec
+                    ".." => {
+                        cd.pop();
+                    }
+                    "/" => {}
+                    dir => {
+                        cd.push(dir);
+                    }
                 }
-                "/" => {}
-                dir => {
-                    cd.push(dir);
-                }
-            },
-            LogItem::Dir(_) => {
-                // no action needed
             }
             LogItem::File(size) => {
                 // for each file, we add its size to all the parent directories
@@ -72,9 +71,7 @@ fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
                     *ancestor_size += size;
                 }
             }
-            LogItem::List => {
-                // no action needed
-            }
+            _ => {}
         }
     }
     sizes
