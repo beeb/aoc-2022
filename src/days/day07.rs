@@ -16,17 +16,11 @@ use crate::days::Day;
 pub struct Day07;
 
 #[derive(Debug)]
-pub struct File {
-    pub size: usize,
-    pub name: String,
-}
-
-#[derive(Debug)]
 pub enum LogItem {
     Change(String),
     List,
     Dir(String),
-    File(File),
+    File(usize),
 }
 
 fn parse_line(input: &str) -> IResult<&str, LogItem> {
@@ -41,12 +35,7 @@ fn parse_line(input: &str) -> IResult<&str, LogItem> {
         }),
         map(
             tuple((u64, char(' '), not_line_ending::<&str, _>)),
-            |(size, _, name)| {
-                LogItem::File(File {
-                    size: size as usize,
-                    name: name.to_string(),
-                })
-            },
+            |(size, _, _)| LogItem::File(size as usize),
         ),
     ))(input)
 }
@@ -71,12 +60,12 @@ fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
             LogItem::Dir(_) => {
                 // no action needed
             }
-            LogItem::File(file) => {
+            LogItem::File(size) => {
                 // for each file, we add its size to all the parent directories
                 for i in 1..=cd.len() {
                     let parent_path = cd.iter().take(i).join("/");
                     let parent_size = sizes.entry(parent_path).or_insert(0);
-                    *parent_size += file.size;
+                    *parent_size += size;
                 }
             }
             LogItem::List => {
@@ -89,7 +78,7 @@ fn get_sizes(input: &<Day07 as Day>::Input) -> HashMap<String, usize> {
 
 fn get_total_size(input: &<Day07 as Day>::Input) -> usize {
     input.iter().fold(0, |acc, i| match i {
-        LogItem::File(f) => acc + f.size,
+        LogItem::File(size) => acc + size,
         _ => acc,
     })
 }
