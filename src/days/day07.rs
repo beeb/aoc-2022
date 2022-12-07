@@ -61,12 +61,14 @@ impl Day for Day07 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
+        // mapping of path to folder size (the initial '/' is ignored)
         let mut sizes: BTreeMap<String, usize> = BTreeMap::new();
+        // keep track of the current directoy as a vec of folder names
         let mut cd: Vec<&str> = vec![];
         for item in input {
-            let cd_path = cd.join("/");
             match item {
                 LogItem::Change(dir) => match dir.as_str() {
+                    // when changing directories, we either push or pop on the cd vec
                     ".." => {
                         cd.pop();
                     }
@@ -75,18 +77,20 @@ impl Day for Day07 {
                         cd.push(dir);
                     }
                 },
-                LogItem::Dir(dir) => {
-                    let path = format!("{cd_path}/{dir}");
-                    sizes.entry(path).or_insert(0);
+                LogItem::Dir(_) => {
+                    // no action needed
                 }
                 LogItem::File(file) => {
+                    // for each file, we add its size to all the parent directories
                     for i in 1..=cd.len() {
                         let parent_path = cd.iter().take(i).join("/");
                         let parent_size = sizes.entry(parent_path).or_insert(0);
                         *parent_size += file.size;
                     }
                 }
-                LogItem::List => {}
+                LogItem::List => {
+                    // no action needed
+                }
             }
         }
         sizes.retain(|_, &mut v| v <= 100_000);
