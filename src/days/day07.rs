@@ -105,23 +105,30 @@ impl Day for Day07 {
 
     /// Part 1 took 0.10672ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        get_sizes(input)
+        get_sizes(input) // our map of path to dir size
             .iter()
-            .fold(0, |acc, (_, &v)| if v <= 100_000 { acc + v } else { acc })
+            .fold(0, |acc, (_, &v)| {
+                // we accumulate the size for all paths that are at most 100k
+                if v <= 100_000 {
+                    acc + v
+                } else {
+                    acc
+                }
+            })
     }
 
     type Output2 = usize;
 
     // Part 2 took 0.116058ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        let sizes = get_sizes(input);
+        let sizes = get_sizes(input); // our map of path to dir size
         let total_size = get_total_size(input);
         let free_space = 70_000_000 - total_size;
-        let to_be_freed = 30_000_000 - free_space;
+        let to_be_freed = 30_000_000 - free_space; // the directory to delete must be at least this size
         *sizes
             .values()
-            .sorted()
-            .find(|a| *a >= &to_be_freed)
+            .sorted() // sort the values in the map
+            .find(|a| *a >= &to_be_freed) // and find the first that is large enough
             .unwrap()
     }
 }
