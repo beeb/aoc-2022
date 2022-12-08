@@ -80,6 +80,9 @@ impl Day for Day08 {
             let mut max = row.first().unwrap();
             visible[x][0] = 1;
             for (y, tree) in row.iter().enumerate().skip(1) {
+                if *max == 9 {
+                    break;
+                }
                 if tree > max {
                     visible[x][y] = 1;
                     max = tree;
@@ -91,6 +94,9 @@ impl Day for Day08 {
             let mut max = row.last().unwrap();
             visible[x][row.len() - 1] = 1;
             for (to_end, tree) in row.iter().rev().enumerate().skip(1) {
+                if *max == 9 {
+                    break;
+                }
                 if tree > max {
                     visible[x][row.len() - 1 - to_end] = 1;
                     max = tree;
@@ -104,6 +110,9 @@ impl Day for Day08 {
             let mut max = col.first().unwrap();
             visible[0][y] = 1;
             for (x, tree) in col.iter().enumerate().skip(1) {
+                if *max == 9 {
+                    break;
+                }
                 if tree > max {
                     visible[x][y] = 1;
                     max = tree;
@@ -115,6 +124,9 @@ impl Day for Day08 {
             let mut max = col.last().unwrap();
             visible[col.len() - 1][y] = 1;
             for (to_end, tree) in col.iter().rev().enumerate().skip(1) {
+                if *max == 9 {
+                    break;
+                }
                 if tree > max {
                     visible[col.len() - 1 - to_end][y] = 1;
                     max = tree;
