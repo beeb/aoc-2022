@@ -34,46 +34,101 @@ impl Day for Day08 {
 
     type Output1 = usize;
 
+    /// The naive solution below is not very efficient, it takes 1.2ms to run
+    ///
+    /// ```
+    /// fn part_1(input: &Self::Input) -> Self::Output1 {
+    ///     let rows = input;
+    ///     let cols = transpose(input);
+    ///     let mut visible: Vec<Vec<usize>> = vec![vec![0; cols.len()]; rows.len()];
+    ///     for (x, row) in rows.iter().enumerate().take(rows.len() - 1).skip(1) {
+    ///         for (y, col) in cols.iter().enumerate().take(cols.len() - 1).skip(1) {
+    ///             let left = row[0..y].iter().max().unwrap();
+    ///             if left < &row[y] {
+    ///                 visible[x][y] = 1;
+    ///                 continue;
+    ///             }
+    ///             let top = col[0..x].iter().max().unwrap();
+    ///             if top < &row[y] {
+    ///                 visible[x][y] = 1;
+    ///                 continue;
+    ///             }
+    ///             let right = row[y + 1..].iter().max().unwrap();
+    ///             if right < &row[y] {
+    ///                 visible[x][y] = 1;
+    ///                 continue;
+    ///             }
+    ///             let bottom = col[x + 1..].iter().max().unwrap();
+    ///             if bottom < &row[y] {
+    ///                 visible[x][y] = 1;
+    ///                 continue;
+    ///             }
+    ///         }
+    ///     }
+    ///     let sides = 2 * rows.len() + 2 * (cols.len() - 2);
+    ///     visible.iter().flatten().sum::<usize>() + sides
+    /// }
+    /// ```
+    ///
+    /// Here is a much nicer solution that runs in 0.06ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        /*
-        +-------> y
-        |
-        v
-        x
-        */
         let rows = input;
         let cols = transpose(input);
         let mut visible: Vec<Vec<usize>> = vec![vec![0; cols.len()]; rows.len()];
-        for (x, row) in rows.iter().enumerate().take(rows.len() - 1).skip(1) {
-            for (y, col) in cols.iter().enumerate().take(cols.len() - 1).skip(1) {
-                let left = row[0..y].iter().max().unwrap();
-                if left < &row[y] {
+        for (x, row) in rows.iter().enumerate() {
+            // "trace" rays from the left
+            let mut max = row.first().unwrap();
+            visible[x][0] = 1;
+            for (y, tree) in row.iter().enumerate().skip(1) {
+                if tree > max {
                     visible[x][y] = 1;
+                    max = tree;
+                } else {
                     continue;
                 }
-                let top = col[0..x].iter().max().unwrap();
-                if top < &row[y] {
-                    visible[x][y] = 1;
-                    continue;
-                }
-                let right = row[y + 1..].iter().max().unwrap();
-                if right < &row[y] {
-                    visible[x][y] = 1;
-                    continue;
-                }
-                let bottom = col[x + 1..].iter().max().unwrap();
-                if bottom < &row[y] {
-                    visible[x][y] = 1;
+            }
+            // "trace" rays from the right
+            let mut max = row.last().unwrap();
+            visible[x][row.len() - 1] = 1;
+            for (to_end, tree) in row.iter().rev().enumerate().skip(1) {
+                if tree > max {
+                    visible[x][row.len() - 1 - to_end] = 1;
+                    max = tree;
+                } else {
                     continue;
                 }
             }
         }
-        let sides = 2 * rows.len() + 2 * (cols.len() - 2);
-        visible.iter().flatten().sum::<usize>() + sides
+        for (y, col) in cols.iter().enumerate() {
+            // "trace" rays from the top
+            let mut max = col.first().unwrap();
+            visible[0][y] = 1;
+            for (x, tree) in col.iter().enumerate().skip(1) {
+                if tree > max {
+                    visible[x][y] = 1;
+                    max = tree;
+                } else {
+                    continue;
+                }
+            }
+            // "trace" rays from the bottom
+            let mut max = col.last().unwrap();
+            visible[col.len() - 1][y] = 1;
+            for (to_end, tree) in col.iter().rev().enumerate().skip(1) {
+                if tree > max {
+                    visible[col.len() - 1 - to_end][y] = 1;
+                    max = tree;
+                } else {
+                    continue;
+                }
+            }
+        }
+        visible.iter().flatten().sum::<usize>()
     }
 
     type Output2 = usize;
 
+    /// Part 2 took 0.239394ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let rows = input;
         let cols = transpose(input);
@@ -96,12 +151,12 @@ impl Day for Day08 {
                     .iter()
                     .position(|h| h >= &row[y])
                     .map(|p| p + 1)
-                    .unwrap_or(row.len() - y - 1);
+                    .unwrap_or(row.len() - 1 - y);
                 let bottom = col[x + 1..]
                     .iter()
                     .position(|h| h >= &row[y])
                     .map(|p| p + 1)
-                    .unwrap_or(col.len() - x - 1);
+                    .unwrap_or(col.len() - 1 - x);
                 score[x][y] = left * top * right * bottom;
             }
         }
