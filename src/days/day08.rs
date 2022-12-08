@@ -44,25 +44,25 @@ impl Day for Day08 {
         let rows = input;
         let cols = transpose(input);
         let mut visible: Vec<Vec<usize>> = vec![vec![0; cols.len()]; rows.len()];
-        for x in 1..rows.len() - 1 {
-            for y in 1..cols.len() - 1 {
-                let left = rows[x][0..y].iter().max().unwrap();
-                if left < &rows[x][y] {
+        for (x, row) in rows.iter().enumerate().take(rows.len() - 1).skip(1) {
+            for (y, col) in cols.iter().enumerate().take(cols.len() - 1).skip(1) {
+                let left = row[0..y].iter().max().unwrap();
+                if left < &row[y] {
                     visible[x][y] = 1;
                     continue;
                 }
-                let top = cols[y][0..x].iter().max().unwrap();
-                if top < &rows[x][y] {
+                let top = col[0..x].iter().max().unwrap();
+                if top < &row[y] {
                     visible[x][y] = 1;
                     continue;
                 }
-                let right = rows[x][y + 1..].iter().max().unwrap();
-                if right < &rows[x][y] {
+                let right = row[y + 1..].iter().max().unwrap();
+                if right < &row[y] {
                     visible[x][y] = 1;
                     continue;
                 }
-                let bottom = cols[y][x + 1..].iter().max().unwrap();
-                if bottom < &rows[x][y] {
+                let bottom = col[x + 1..].iter().max().unwrap();
+                if bottom < &row[y] {
                     visible[x][y] = 1;
                     continue;
                 }
@@ -74,7 +74,37 @@ impl Day for Day08 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let rows = input;
+        let cols = transpose(input);
+        let mut score: Vec<Vec<usize>> = vec![vec![0; cols.len()]; rows.len()];
+        for (x, row) in rows.iter().enumerate() {
+            for (y, col) in cols.iter().enumerate() {
+                let left = row[0..y]
+                    .iter()
+                    .rev()
+                    .position(|h| h >= &row[y])
+                    .map(|p| p + 1)
+                    .unwrap_or(y);
+                let top = col[0..x]
+                    .iter()
+                    .rev()
+                    .position(|h| h >= &row[y])
+                    .map(|p| p + 1)
+                    .unwrap_or(x);
+                let right = row[y + 1..]
+                    .iter()
+                    .position(|h| h >= &row[y])
+                    .map(|p| p + 1)
+                    .unwrap_or(row.len() - y - 1);
+                let bottom = col[x + 1..]
+                    .iter()
+                    .position(|h| h >= &row[y])
+                    .map(|p| p + 1)
+                    .unwrap_or(col.len() - x - 1);
+                score[x][y] = left * top * right * bottom;
+            }
+        }
+        *score.iter().flatten().max().unwrap()
     }
 }
