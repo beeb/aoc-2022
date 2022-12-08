@@ -86,8 +86,6 @@ impl Day for Day08 {
                         break;
                     }
                     max = tree;
-                } else {
-                    continue;
                 }
             }
             // "trace" rays from the right
@@ -100,8 +98,6 @@ impl Day for Day08 {
                         break;
                     }
                     max = tree;
-                } else {
-                    continue;
                 }
             }
         }
@@ -116,8 +112,6 @@ impl Day for Day08 {
                         break;
                     }
                     max = tree;
-                } else {
-                    continue;
                 }
             }
             // "trace" rays from the bottom
@@ -130,8 +124,6 @@ impl Day for Day08 {
                         break;
                     }
                     max = tree;
-                } else {
-                    continue;
                 }
             }
         }
