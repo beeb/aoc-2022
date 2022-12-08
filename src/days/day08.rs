@@ -70,7 +70,7 @@ impl Day for Day08 {
     /// }
     /// ```
     ///
-    /// Here is a much nicer solution that runs in 0.06ms
+    /// Here is a much nicer solution that runs in 0.056ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let rows = input;
         let cols = transpose(input);
@@ -80,11 +80,11 @@ impl Day for Day08 {
             let mut max = row.first().unwrap();
             visible[x][0] = 1;
             for (y, tree) in row.iter().enumerate().skip(1) {
-                if *max == 9 {
-                    break;
-                }
                 if tree > max {
                     visible[x][y] = 1;
+                    if *tree == 9 {
+                        break;
+                    }
                     max = tree;
                 } else {
                     continue;
@@ -94,11 +94,11 @@ impl Day for Day08 {
             let mut max = row.last().unwrap();
             visible[x][row.len() - 1] = 1;
             for (to_end, tree) in row.iter().rev().enumerate().skip(1) {
-                if *max == 9 {
-                    break;
-                }
                 if tree > max {
                     visible[x][row.len() - 1 - to_end] = 1;
+                    if *tree == 9 {
+                        break;
+                    }
                     max = tree;
                 } else {
                     continue;
@@ -110,11 +110,11 @@ impl Day for Day08 {
             let mut max = col.first().unwrap();
             visible[0][y] = 1;
             for (x, tree) in col.iter().enumerate().skip(1) {
-                if *max == 9 {
-                    break;
-                }
                 if tree > max {
                     visible[x][y] = 1;
+                    if *tree == 9 {
+                        break;
+                    }
                     max = tree;
                 } else {
                     continue;
@@ -124,11 +124,11 @@ impl Day for Day08 {
             let mut max = col.last().unwrap();
             visible[col.len() - 1][y] = 1;
             for (to_end, tree) in col.iter().rev().enumerate().skip(1) {
-                if *max == 9 {
-                    break;
-                }
                 if tree > max {
                     visible[col.len() - 1 - to_end][y] = 1;
+                    if *tree == 9 {
+                        break;
+                    }
                     max = tree;
                 } else {
                     continue;
