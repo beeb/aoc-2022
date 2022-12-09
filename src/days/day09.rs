@@ -120,11 +120,11 @@ impl Point {
     /// The actual distance is computed as follows:
     ///
     /// ```
-    /// fn dist_real(&self, other: &Point) -> isize {
+    /// fn dist_real(&self, other: &Point) -> f64 {
     ///     let dx = self.x() - other.x();
     ///     let dy = self.y() - other.y();
     ///     let m = (dx.pow(2) + dy.pow(2)) as f64;
-    ///     m.sqrt().round() as isize
+    ///     m.sqrt()
     /// }
     /// ```
     ///
