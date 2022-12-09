@@ -23,7 +23,7 @@ pub enum Move {
 }
 
 impl Move {
-    fn inner(&self) -> isize {
+    fn dist(&self) -> isize {
         match self {
             Self::Up(dist) => *dist,
             Self::Right(dist) => *dist,
@@ -45,6 +45,7 @@ impl From<(&str, i64)> for Move {
     }
 }
 
+/// we will use interior mutability to avoid having to borrow mutably
 #[derive(Clone)]
 struct Point {
     x: RefCell<isize>,
@@ -66,48 +67,81 @@ impl Point {
     fn x(&self) -> isize {
         *self.x.borrow()
     }
+
     fn y(&self) -> isize {
         *self.y.borrow()
     }
 
+    /// Move this point by a signed increment in x and y
     fn mov(&self, x: isize, y: isize) -> &Self {
         *self.x.borrow_mut() += x;
         *self.y.borrow_mut() += y;
         self
     }
-    fn move_towards(&self, other: &Point) -> &Self {
-        if self.x == other.x {
-            // above or below or on top
-            *self.y.borrow_mut() += (other.y > self.y) as isize;
-            *self.y.borrow_mut() -= (other.y < self.y) as isize;
-        } else if self.y == other.y {
-            // left or right
-            *self.x.borrow_mut() += (other.x > self.x) as isize;
-            *self.x.borrow_mut() -= (other.x < self.x) as isize;
-        } else if other.x > self.x && other.y > self.y {
-            // north-east quadrant
-            *self.x.borrow_mut() += 1;
-            *self.y.borrow_mut() += 1;
-        } else if other.x > self.x && other.y < self.y {
-            // south-east quadrant
-            *self.x.borrow_mut() += 1;
-            *self.y.borrow_mut() -= 1;
-        } else if other.x < self.x && other.y < self.y {
-            // south-west quadrant
-            *self.x.borrow_mut() -= 1;
-            *self.y.borrow_mut() -= 1;
-        } else {
-            // north-west quadrant
-            *self.x.borrow_mut() -= 1;
-            *self.y.borrow_mut() += 1;
+
+    /// Apply a move increment (distance = 1)
+    fn apply_move(&self, mov: &Move) -> &Self {
+        match mov {
+            Move::Up(_) => {
+                self.mov(0, 1);
+            }
+            Move::Right(_) => {
+                self.mov(1, 0);
+            }
+            Move::Down(_) => {
+                self.mov(0, -1);
+            }
+            Move::Left(_) => {
+                self.mov(-1, 0);
+            }
         }
         self
     }
+
+    /// Move this point towards another point
+    fn move_towards(&self, other: &Point) -> &Self {
+        if other.x() > self.x() {
+            *self.x.borrow_mut() += 1;
+        }
+        if other.x() < self.x() {
+            *self.x.borrow_mut() -= 1;
+        }
+        if other.y() > self.y() {
+            *self.y.borrow_mut() += 1;
+        }
+        if other.y() < self.y() {
+            *self.y.borrow_mut() -= 1;
+        }
+        self
+    }
+
+    /// Compte the distance between two points
+    ///
+    /// The actual distance is computed as follows:
+    ///
+    /// ```
+    /// fn dist_real(&self, other: &Point) -> isize {
+    ///     let dx = self.x() - other.x();
+    ///     let dy = self.y() - other.y();
+    ///     let m = (dx.pow(2) + dy.pow(2)) as f64;
+    ///     m.sqrt().round() as isize
+    /// }
+    /// ```
+    ///
+    /// But we can simplify it in our case, since we can't move more than 1
+    /// position at a time
+    ///
     fn dist(&self, other: &Point) -> isize {
         let dx = self.x() - other.x();
         let dy = self.y() - other.y();
-        let m = (dx.pow(2) + dy.pow(2)) as f64;
-        m.sqrt().round() as isize
+        /* if dx == 0 && dy == 0 {
+            // this is not even needed as we just want to know if the distance is larger than 1
+            return 0;
+        } */
+        if dx.abs() > 1 || dy.abs() > 1 {
+            return 2;
+        }
+        1
     }
 }
 
@@ -129,26 +163,16 @@ impl Day for Day09 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
+        // keep track of all the visited coordinates
         let mut visited: HashSet<(isize, isize)> = HashSet::new();
         let head = Point::default();
         let tail = Point::default();
         for mov in input {
-            for _ in 0..mov.inner() {
-                match mov {
-                    Move::Up(_) => {
-                        head.mov(0, 1);
-                    }
-                    Move::Right(_) => {
-                        head.mov(1, 0);
-                    }
-                    Move::Down(_) => {
-                        head.mov(0, -1);
-                    }
-                    Move::Left(_) => {
-                        head.mov(-1, 0);
-                    }
-                }
+            for _ in 0..mov.dist() {
+                // for each movement step
+                head.apply_move(mov); // only moves by 1 unit
                 if head.dist(&tail) > 1 {
+                    // the head moved too far, we need to move the tail too
                     tail.move_towards(&head);
                 }
                 visited.insert((tail.x(), tail.y()));
@@ -160,24 +184,13 @@ impl Day for Day09 {
     type Output2 = usize;
 
     fn part_2(input: &Self::Input) -> Self::Output2 {
+        // keep track of all the visited coordinates
         let mut visited: HashSet<(isize, isize)> = HashSet::new();
         let knots = vec![Point::default(); 10];
         for mov in input {
-            for _ in 0..mov.inner() {
-                match mov {
-                    Move::Up(_) => {
-                        knots[0].mov(0, 1);
-                    }
-                    Move::Right(_) => {
-                        knots[0].mov(1, 0);
-                    }
-                    Move::Down(_) => {
-                        knots[0].mov(0, -1);
-                    }
-                    Move::Left(_) => {
-                        knots[0].mov(-1, 0);
-                    }
-                }
+            for _ in 0..mov.dist() {
+                // for each movement step
+                knots[0].apply_move(mov); // only moves by 1 unit
                 for k in 1..10 {
                     if knots[k - 1].dist(&knots[k]) > 1 {
                         knots[k].move_towards(&knots[k - 1]);
