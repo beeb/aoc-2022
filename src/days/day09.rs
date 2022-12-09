@@ -141,7 +141,7 @@ impl Point {
         if dx.abs() > 1 || dy.abs() > 1 {
             return 2;
         }
-        1
+        1 // for our purposes, 0 or 1 is the same
     }
 }
 
