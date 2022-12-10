@@ -47,22 +47,24 @@ impl Day for Day10 {
                 signal_sum += cycle * x;
             }
             if add_val == 0 {
+                // we need to proceed to a new instruction
                 match input.pop() {
                     Some(Instruction::Noop) => {
                         continue; // increment cycle counter without changing value
                     }
                     Some(Instruction::Addx(val)) => {
-                        add_val = *val; // next cycle we're still processing addx
+                        add_val = *val; // next cycle we're still processing addx, at the end we'll update the register
                         continue; // increment cycle counter
                     }
                     None => {
+                        // vec is empty
                         break;
                     }
                 }
             } else {
-                // at the end of the cycle, we can increment value
+                // at the end of the cycle, we can change the register
                 x += add_val;
-                add_val = 0;
+                add_val = 0; // next cycle we pop a new instruction
             }
         }
         signal_sum
