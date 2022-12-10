@@ -76,7 +76,7 @@ impl Day for Day10 {
     /// Part 2 took 0.012493ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
-        let mut crt: Vec<bool> = vec![false; 40 * 6]; // 6 rows of 40 pixels
+        let mut crt: Vec<char> = vec!['.'; 40 * 6]; // 6 rows of 40 pixels
         let mut x = 1isize; // the register
         let mut add_val = 0; // temp var
         for cycle in 1usize.. {
@@ -85,7 +85,7 @@ impl Day for Day10 {
             // check if the sprite is in range
             if crt_row_pos >= x - 1 && crt_row_pos <= x + 1 {
                 // we turn the pixel on
-                crt[cycle - 1] = true;
+                crt[cycle - 1] = '#';
             }
             if add_val == 0 {
                 // we need to proceed to a new instruction
@@ -110,11 +110,7 @@ impl Day for Day10 {
         }
         let mut res = crt
             .chunks_exact(40)
-            .map(|row| {
-                row.iter()
-                    .map(|on| if *on { '#' } else { '.' })
-                    .collect::<String>()
-            })
+            .map(|row| row.iter().collect::<String>())
             .join("\n");
         res.insert(0, '\n');
         res
