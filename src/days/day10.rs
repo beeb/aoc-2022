@@ -19,6 +19,34 @@ pub enum Instruction {
     Addx(isize),
 }
 
+/// Process the instructions during a cycle.
+///
+/// Returns the updated `x` and the updated `add_val`, and a boolean that is false when there are no more instructions
+fn process_cycle(
+    x: isize,
+    add_val: isize,
+    instructions: &mut Vec<&Instruction>,
+) -> (isize, isize, bool) {
+    if add_val == 0 {
+        // we need to proceed to a new instruction
+        match instructions.pop() {
+            Some(Instruction::Noop) => {
+                return (x, 0, true); // x unchanged, pop the next instruction
+            }
+            Some(Instruction::Addx(val)) => {
+                return (x, *val, true); // next cycle we're still processing addx, at the end we'll update the register
+            }
+            None => {
+                // vec is empty
+                return (x, 0, false);
+            }
+        }
+    }
+    // increment the register
+    // next cycle we pop a new instruction (add_val = 0)
+    (x + add_val, 0, true)
+}
+
 impl Day for Day10 {
     type Input = Vec<Instruction>;
 
@@ -47,25 +75,10 @@ impl Day for Day10 {
             if cycle % 40 == 20 {
                 signal_sum += cycle * x;
             }
-            if add_val == 0 {
-                // we need to proceed to a new instruction
-                match input.pop() {
-                    Some(Instruction::Noop) => {
-                        continue; // increment cycle counter without changing value
-                    }
-                    Some(Instruction::Addx(val)) => {
-                        add_val = *val; // next cycle we're still processing addx, at the end we'll update the register
-                        continue; // increment cycle counter
-                    }
-                    None => {
-                        // vec is empty
-                        break;
-                    }
-                }
-            } else {
-                // at the end of the cycle, we can change the register
-                x += add_val;
-                add_val = 0; // next cycle we pop a new instruction
+            let cont: bool;
+            (x, add_val, cont) = process_cycle(x, add_val, &mut input);
+            if !cont {
+                break;
             }
         }
         signal_sum
@@ -87,25 +100,10 @@ impl Day for Day10 {
                 // we turn the pixel on
                 crt[cycle - 1] = '#';
             }
-            if add_val == 0 {
-                // we need to proceed to a new instruction
-                match input.pop() {
-                    Some(Instruction::Noop) => {
-                        continue; // increment cycle counter without changing value
-                    }
-                    Some(Instruction::Addx(val)) => {
-                        add_val = *val; // next cycle we're still processing addx, at the end we'll update the register
-                        continue; // increment cycle counter
-                    }
-                    None => {
-                        // vec is empty
-                        break;
-                    }
-                }
-            } else {
-                // at the end of the cycle, we can change the register
-                x += add_val;
-                add_val = 0; // next cycle we pop a new instruction
+            let cont: bool;
+            (x, add_val, cont) = process_cycle(x, add_val, &mut input);
+            if !cont {
+                break;
             }
         }
         let mut res = crt
