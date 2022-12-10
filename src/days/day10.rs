@@ -47,6 +47,11 @@ fn process_cycle(
     (x + add_val, 0, true)
 }
 
+fn sprite_in_range(cycle: usize, x: isize) -> bool {
+    let crt_row_pos = (cycle as isize - 1) % 40;
+    crt_row_pos >= x - 1 && crt_row_pos <= x + 1
+}
+
 impl Day for Day10 {
     type Input = Vec<Instruction>;
 
@@ -94,9 +99,8 @@ impl Day for Day10 {
         let mut add_val = 0; // temp var
         for cycle in 1usize.. {
             // during cycle, we draw the crt
-            let crt_row_pos = (cycle as isize - 1) % 40;
             // check if the sprite is in range
-            if crt_row_pos >= x - 1 && crt_row_pos <= x + 1 {
+            if sprite_in_range(cycle, x) {
                 // we turn the pixel on
                 crt[cycle - 1] = '#';
             }
