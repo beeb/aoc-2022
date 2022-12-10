@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -70,9 +71,49 @@ impl Day for Day10 {
         signal_sum
     }
 
-    type Output2 = isize;
+    type Output2 = String;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut input = input.iter().rev().collect::<Vec<_>>();
+        let mut crt: Vec<bool> = vec![false; 40 * 6]; // 6 rows of 40 pixels
+        let mut add_val = 0;
+        let mut x = 1isize;
+        for cycle in 1usize.. {
+            // during cycle, we draw the crt
+            let crt_pos = (cycle as isize - 1) % 40;
+            if crt_pos >= x - 1 && crt_pos <= x + 1 {
+                crt[cycle - 1] = true;
+            }
+            if add_val == 0 {
+                // we need to proceed to a new instruction
+                match input.pop() {
+                    Some(Instruction::Noop) => {
+                        continue; // increment cycle counter without changing value
+                    }
+                    Some(Instruction::Addx(val)) => {
+                        add_val = *val; // next cycle we're still processing addx, at the end we'll update the register
+                        continue; // increment cycle counter
+                    }
+                    None => {
+                        // vec is empty
+                        break;
+                    }
+                }
+            } else {
+                // at the end of the cycle, we can change the register
+                x += add_val;
+                add_val = 0; // next cycle we pop a new instruction
+            }
+        }
+        let mut res = crt
+            .chunks_exact(40)
+            .map(|row| {
+                row.iter()
+                    .map(|on| if *on { '#' } else { '.' })
+                    .collect::<String>()
+            })
+            .join("\n");
+        res.insert(0, '\n');
+        res
     }
 }
