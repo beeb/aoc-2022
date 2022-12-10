@@ -36,6 +36,7 @@ impl Day for Day10 {
 
     type Output1 = isize;
 
+    /// Part 1 took 0.008851ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
         let measure_at = vec![20, 60, 100, 140, 180, 220];
@@ -73,6 +74,7 @@ impl Day for Day10 {
 
     type Output2 = String;
 
+    /// Part 2 took 0.012493ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
         let mut crt: Vec<bool> = vec![false; 40 * 6]; // 6 rows of 40 pixels
