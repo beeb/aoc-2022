@@ -39,13 +39,12 @@ impl Day for Day10 {
     /// Part 1 took 0.008851ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
-        let measure_at = vec![20, 60, 100, 140, 180, 220];
         let mut x = 1; // the register
         let mut signal_sum = 0; // our output
         let mut add_val = 0; // temp var to hold the addx value over to the next cycle
-        for cycle in 1..=*measure_at.last().unwrap() {
-            // during cycle, we check counter
-            if measure_at.contains(&cycle) {
+        for cycle in 1.. {
+            // during cycle, we check counter to see if we need to measure the signal
+            if cycle % 40 == 20 {
                 signal_sum += cycle * x;
             }
             if add_val == 0 {
