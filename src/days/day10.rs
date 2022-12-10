@@ -37,11 +37,11 @@ impl Day for Day10 {
     type Output1 = isize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        let mut input = input.iter().rev().collect::<Vec<_>>();
+        let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
         let measure_at = vec![20, 60, 100, 140, 180, 220];
-        let mut add_val = 0;
-        let mut x = 1;
-        let mut signal_sum = 0;
+        let mut x = 1; // the register
+        let mut signal_sum = 0; // our output
+        let mut add_val = 0; // temp var to hold the addx value over to the next cycle
         for cycle in 1..=*measure_at.last().unwrap() {
             // during cycle, we check counter
             if measure_at.contains(&cycle) {
@@ -74,14 +74,16 @@ impl Day for Day10 {
     type Output2 = String;
 
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        let mut input = input.iter().rev().collect::<Vec<_>>();
+        let mut input = input.iter().rev().collect::<Vec<_>>(); // reverse so we can pop
         let mut crt: Vec<bool> = vec![false; 40 * 6]; // 6 rows of 40 pixels
-        let mut add_val = 0;
-        let mut x = 1isize;
+        let mut x = 1isize; // the register
+        let mut add_val = 0; // temp var
         for cycle in 1usize.. {
             // during cycle, we draw the crt
-            let crt_pos = (cycle as isize - 1) % 40;
-            if crt_pos >= x - 1 && crt_pos <= x + 1 {
+            let crt_row_pos = (cycle as isize - 1) % 40;
+            // check if the sprite is in range
+            if crt_row_pos >= x - 1 && crt_row_pos <= x + 1 {
+                // we turn the pixel on
                 crt[cycle - 1] = true;
             }
             if add_val == 0 {
