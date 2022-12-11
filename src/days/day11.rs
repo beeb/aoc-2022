@@ -140,7 +140,6 @@ impl Day for Day11 {
                     inspections[monkey.id] += 1;
                 }
             }
-            println!("{inspections:?}");
         }
         let (first, second) = inspections
             .iter()
@@ -154,7 +153,36 @@ impl Day for Day11 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let monkeys = input.clone();
+        let mut inspections: Vec<usize> = vec![0; input.len()];
+        for _ in 0..10_000 {
+            for monkey in &monkeys {
+                while let Some(worry_level) = monkey.pop_front_item() {
+                    let during_inspection = match monkey.operator {
+                        Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
+                        Operator::Add => worry_level + monkey.operand.as_value(worry_level),
+                    };
+                    if during_inspection % monkey.modulo == 0 {
+                        let after_inspection =
+                            during_inspection % monkeys[monkey.throw_true].modulo;
+                        monkeys[monkey.throw_true].push_item(after_inspection)
+                    } else {
+                        let after_inspection =
+                            during_inspection % monkeys[monkey.throw_false].modulo;
+                        monkeys[monkey.throw_false].push_item(after_inspection)
+                    }
+                    inspections[monkey.id] += 1;
+                }
+            }
+        }
+        let (first, second) = inspections
+            .iter()
+            .sorted()
+            .rev()
+            .take(2)
+            .collect_tuple()
+            .unwrap();
+        first * second
     }
 }
