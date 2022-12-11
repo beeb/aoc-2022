@@ -58,47 +58,71 @@ impl Monkey {
     }
 }
 
+fn parse_id(input: &str) -> IResult<&str, usize> {
+    map(tuple((tag("Monkey "), u8, tag(":\n"))), |(_, id, _)| {
+        id as usize
+    })(input)
+}
+
+fn parse_items(input: &str) -> IResult<&str, Vec<usize>> {
+    map(
+        tuple((
+            tag("  Starting items: "),
+            separated_list0(tag(", "), map(u64, |i| i as usize)),
+            newline,
+        )),
+        |(_, items, _)| items,
+    )(input)
+}
+
+fn parse_operation(input: &str) -> IResult<&str, (Operator, Operand)> {
+    map(
+        tuple((
+            tag("  Operation: new = old "),
+            map(anychar, |op| match op {
+                '*' => Operator::Mult,
+                _ => Operator::Add,
+            }),
+            char(' '),
+            alt((
+                map(u64, |v| Operand::Value(v as usize)),
+                map(tag("old"), |_| Operand::Old),
+            )),
+            newline,
+        )),
+        |(_, op, _, v, _)| (op, v),
+    )(input)
+}
+
+fn parse_modulo(input: &str) -> IResult<&str, usize> {
+    map(
+        tuple((tag("  Test: divisible by "), u64, newline)),
+        |(_, modulo, _)| modulo as usize,
+    )(input)
+}
+
+fn parse_true(input: &str) -> IResult<&str, usize> {
+    map(
+        tuple((tag("    If true: throw to monkey "), u8, newline)),
+        |(_, t, _)| t as usize,
+    )(input)
+}
+
+fn parse_false(input: &str) -> IResult<&str, usize> {
+    map(
+        tuple((tag("    If false: throw to monkey "), u8)),
+        |(_, f)| f as usize,
+    )(input)
+}
+
 fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     let (rest, info) = tuple((
-        map(tuple((tag("Monkey "), u8, tag(":\n"))), |(_, id, _)| {
-            id as usize
-        }),
-        map(
-            tuple((
-                tag("  Starting items: "),
-                separated_list0(tag(", "), map(u64, |i| i as usize)),
-                newline,
-            )),
-            |(_, items, _)| items,
-        ),
-        map(
-            tuple((
-                tag("  Operation: new = old "),
-                map(anychar, |op| match op {
-                    '*' => Operator::Mult,
-                    _ => Operator::Add,
-                }),
-                char(' '),
-                alt((
-                    map(u64, |v| Operand::Value(v as usize)),
-                    map(tag("old"), |_| Operand::Old),
-                )),
-                newline,
-            )),
-            |(_, op, _, v, _)| (op, v),
-        ),
-        map(
-            tuple((tag("  Test: divisible by "), u64, newline)),
-            |(_, modulo, _)| modulo as usize,
-        ),
-        map(
-            tuple((tag("    If true: throw to monkey "), u8, newline)),
-            |(_, t, _)| t as usize,
-        ),
-        map(
-            tuple((tag("    If false: throw to monkey "), u8)),
-            |(_, f)| f as usize,
-        ),
+        parse_id,
+        parse_items,
+        parse_operation,
+        parse_modulo,
+        parse_true,
+        parse_false,
     ))(input)?;
     let monkey = Monkey {
         id: info.0,
