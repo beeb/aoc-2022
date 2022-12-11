@@ -112,6 +112,32 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
 
 pub struct Day11;
 
+fn process_monkeys(
+    monkeys: &Vec<Monkey>,
+    inspections: &mut [usize],
+    common_mod: usize,
+    part2: bool,
+) {
+    for monkey in monkeys {
+        while let Some(worry_level) = monkey.pop_front_item() {
+            let during_inspection = match monkey.operator {
+                Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
+                Operator::Add => worry_level + monkey.operand.as_value(worry_level),
+            };
+            let after_inspection = match part2 {
+                false => during_inspection / 3,
+                true => during_inspection % common_mod,
+            };
+            if after_inspection % monkey.modulo == 0 {
+                monkeys[monkey.throw_true].push_item(after_inspection)
+            } else {
+                monkeys[monkey.throw_false].push_item(after_inspection)
+            }
+            inspections[monkey.id] += 1;
+        }
+    }
+}
+
 impl Day for Day11 {
     type Input = Vec<Monkey>;
 
@@ -125,21 +151,7 @@ impl Day for Day11 {
         let monkeys = input.clone();
         let mut inspections: Vec<usize> = vec![0; input.len()];
         for _ in 0..20 {
-            for monkey in &monkeys {
-                while let Some(worry_level) = monkey.pop_front_item() {
-                    let during_inspection = match monkey.operator {
-                        Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
-                        Operator::Add => worry_level + monkey.operand.as_value(worry_level),
-                    };
-                    let after_inspection = during_inspection / 3;
-                    if after_inspection % monkey.modulo == 0 {
-                        monkeys[monkey.throw_true].push_item(after_inspection)
-                    } else {
-                        monkeys[monkey.throw_false].push_item(after_inspection)
-                    }
-                    inspections[monkey.id] += 1;
-                }
-            }
+            process_monkeys(&monkeys, &mut inspections, 0, false);
         }
         inspections.iter().sorted().rev().take(2).product()
     }
@@ -149,24 +161,9 @@ impl Day for Day11 {
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let monkeys = input.clone();
         let mut inspections: Vec<usize> = vec![0; input.len()];
-        let max_val: usize = monkeys.iter().map(|m| m.modulo).product();
+        let common_mod: usize = monkeys.iter().map(|m| m.modulo).product();
         for _ in 0..10_000 {
-            for monkey in &monkeys {
-                while let Some(worry_level) = monkey.pop_front_item() {
-                    let during_inspection = match monkey.operator {
-                        Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
-                        Operator::Add => worry_level + monkey.operand.as_value(worry_level),
-                    };
-                    if during_inspection % monkey.modulo == 0 {
-                        let worry = during_inspection % max_val;
-                        monkeys[monkey.throw_true].push_item(worry)
-                    } else {
-                        let worry = during_inspection % max_val;
-                        monkeys[monkey.throw_false].push_item(worry)
-                    }
-                    inspections[monkey.id] += 1;
-                }
-            }
+            process_monkeys(&monkeys, &mut inspections, common_mod, true);
         }
         inspections.iter().sorted().rev().take(2).product()
     }
