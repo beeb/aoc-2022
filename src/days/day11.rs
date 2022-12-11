@@ -141,14 +141,7 @@ impl Day for Day11 {
                 }
             }
         }
-        let (first, second) = inspections
-            .iter()
-            .sorted()
-            .rev()
-            .take(2)
-            .collect_tuple()
-            .unwrap();
-        first * second
+        inspections.iter().sorted().rev().take(2).product()
     }
 
     type Output2 = usize;
@@ -156,6 +149,7 @@ impl Day for Day11 {
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let monkeys = input.clone();
         let mut inspections: Vec<usize> = vec![0; input.len()];
+        let max_val: usize = monkeys.iter().map(|m| m.modulo).product();
         for _ in 0..10_000 {
             for monkey in &monkeys {
                 while let Some(worry_level) = monkey.pop_front_item() {
@@ -164,25 +158,16 @@ impl Day for Day11 {
                         Operator::Add => worry_level + monkey.operand.as_value(worry_level),
                     };
                     if during_inspection % monkey.modulo == 0 {
-                        let after_inspection =
-                            during_inspection % monkeys[monkey.throw_true].modulo;
-                        monkeys[monkey.throw_true].push_item(after_inspection)
+                        let worry = during_inspection % max_val;
+                        monkeys[monkey.throw_true].push_item(worry)
                     } else {
-                        let after_inspection =
-                            during_inspection % monkeys[monkey.throw_false].modulo;
-                        monkeys[monkey.throw_false].push_item(after_inspection)
+                        let worry = during_inspection % max_val;
+                        monkeys[monkey.throw_false].push_item(worry)
                     }
                     inspections[monkey.id] += 1;
                 }
             }
         }
-        let (first, second) = inspections
-            .iter()
-            .sorted()
-            .rev()
-            .take(2)
-            .collect_tuple()
-            .unwrap();
-        first * second
+        inspections.iter().sorted().rev().take(2).product()
     }
 }
