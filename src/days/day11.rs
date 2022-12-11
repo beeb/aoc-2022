@@ -1,4 +1,5 @@
 use nom::{
+    branch::alt,
     bytes::complete::tag,
     character::complete::{anychar, char, newline, u64, u8},
     combinator::map,
@@ -16,10 +17,16 @@ pub enum Operator {
 }
 
 #[derive(Debug)]
+pub enum Operand {
+    Value(usize),
+    Old,
+}
+
+#[derive(Debug)]
 pub struct Monkey {
     pub items: Vec<usize>,
     pub operator: Operator,
-    pub operand: usize,
+    pub operand: Operand,
     pub modulo: usize,
     pub throw_true: usize,
     pub throw_false: usize,
@@ -44,7 +51,10 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
                     _ => Operator::Add,
                 }),
                 char(' '),
-                map(u64, |v| v as usize),
+                alt((
+                    map(u64, |v| Operand::Value(v as usize)),
+                    map(tag("old"), |_| Operand::Old),
+                )),
                 newline,
             )),
             |(_, op, _, v, _)| (op, v),
@@ -70,7 +80,6 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
         throw_true: info.4,
         throw_false: info.5,
     };
-    println!("{rest:?}");
     Ok((rest, monkey))
 }
 
@@ -87,6 +96,7 @@ impl Day for Day11 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         println!("{input:?}");
+        println!("{}", input.len());
         0
     }
 
