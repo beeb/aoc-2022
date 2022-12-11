@@ -124,6 +124,8 @@ fn process_monkeys(
                 Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
                 Operator::Add => worry_level + monkey.operand.as_value(worry_level),
             };
+            // after inspection, we divide it by 3 for part1, and we modulo it by the product of all the modulos
+            // of all monkeys in part2, so that the divisibility is not affected but we keep it in an acceptable range
             let after_inspection = match part2 {
                 false => during_inspection / 3,
                 true => during_inspection % common_mod,
@@ -147,6 +149,7 @@ impl Day for Day11 {
 
     type Output1 = usize;
 
+    /// Part 1 took 0.027ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let monkeys = input.clone();
         let mut inspections: Vec<usize> = vec![0; input.len()];
@@ -158,6 +161,7 @@ impl Day for Day11 {
 
     type Output2 = usize;
 
+    /// Part 2 took 7.0583ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let monkeys = input.clone();
         let mut inspections: Vec<usize> = vec![0; input.len()];
