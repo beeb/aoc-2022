@@ -1,3 +1,6 @@
+use std::{cell::RefCell, collections::VecDeque};
+
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -10,21 +13,31 @@ use nom::{
 
 use crate::days::Day;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operator {
     Mult,
     Add,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operand {
     Value(usize),
     Old,
 }
 
-#[derive(Debug)]
+impl Operand {
+    pub fn as_value(&self, old: usize) -> usize {
+        match self {
+            Self::Old => old,
+            Self::Value(v) => *v,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Monkey {
-    pub items: Vec<usize>,
+    pub id: usize,
+    pub items: RefCell<VecDeque<usize>>,
     pub operator: Operator,
     pub operand: Operand,
     pub modulo: usize,
@@ -32,9 +45,22 @@ pub struct Monkey {
     pub throw_false: usize,
 }
 
+impl Monkey {
+    fn pop_front_item(&self) -> Option<usize> {
+        let mut items = self.items.borrow_mut();
+        items.pop_front()
+    }
+    fn push_item(&self, item: usize) {
+        let mut items = self.items.borrow_mut();
+        items.push_back(item);
+    }
+}
+
 fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     let (rest, info) = tuple((
-        map(tuple((tag("Monkey "), u8, tag(":\n"))), |(_, id, _)| id),
+        map(tuple((tag("Monkey "), u8, tag(":\n"))), |(_, id, _)| {
+            id as usize
+        }),
         map(
             tuple((
                 tag("  Starting items: "),
@@ -73,7 +99,8 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
         ),
     ))(input)?;
     let monkey = Monkey {
-        items: info.1,
+        id: info.0,
+        items: RefCell::new(VecDeque::from(info.1)),
         operator: info.2 .0,
         operand: info.2 .1,
         modulo: info.3,
@@ -95,9 +122,34 @@ impl Day for Day11 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        println!("{input:?}");
-        println!("{}", input.len());
-        0
+        let monkeys = input.clone();
+        let mut inspections: Vec<usize> = vec![0; input.len()];
+        for _ in 0..20 {
+            for monkey in &monkeys {
+                while let Some(worry_level) = monkey.pop_front_item() {
+                    let during_inspection = match monkey.operator {
+                        Operator::Mult => worry_level * monkey.operand.as_value(worry_level),
+                        Operator::Add => worry_level + monkey.operand.as_value(worry_level),
+                    };
+                    let after_inspection = during_inspection / 3;
+                    if after_inspection % monkey.modulo == 0 {
+                        monkeys[monkey.throw_true].push_item(after_inspection)
+                    } else {
+                        monkeys[monkey.throw_false].push_item(after_inspection)
+                    }
+                    inspections[monkey.id] += 1;
+                }
+            }
+            println!("{inspections:?}");
+        }
+        let (first, second) = inspections
+            .iter()
+            .sorted()
+            .rev()
+            .take(2)
+            .collect_tuple()
+            .unwrap();
+        first * second
     }
 
     type Output2 = usize;
