@@ -26,6 +26,8 @@ pub enum Operand {
 }
 
 impl Operand {
+    /// allows to retrieve the value of the operand, regardless of which variant it is.
+    /// this requires passing the old value for the case where it's "old"
     pub fn as_value(&self, old: usize) -> usize {
         match self {
             Self::Old => old,
