@@ -1,3 +1,5 @@
+use std::{cmp::Ordering, collections::BinaryHeap};
+
 use itertools::Itertools;
 use nom::{
     character::complete::{line_ending, not_line_ending},
@@ -8,6 +10,33 @@ use nom::{
 
 use crate::days::Day;
 
+#[derive(Debug)]
+pub struct OpenPos {
+    x: usize,
+    y: usize,
+    cost: usize,
+}
+
+impl Eq for OpenPos {}
+
+impl PartialEq for OpenPos {
+    fn eq(&self, other: &Self) -> bool {
+        self.cost == other.cost
+    }
+}
+
+impl PartialOrd for OpenPos {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        other.cost.partial_cmp(&self.cost)
+    }
+}
+
+impl Ord for OpenPos {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
 pub struct Day12;
 
 fn find_start_end(input: &mut <Day12 as Day>::Input) -> ((usize, usize), (usize, usize)) {
@@ -17,7 +46,8 @@ fn find_start_end(input: &mut <Day12 as Day>::Input) -> ((usize, usize), (usize,
         for (y, cell) in row.iter_mut().enumerate() {
             if *cell == 'S' as usize {
                 start = (x, y);
-                *cell = 'a' as usize;
+                let val = 'a' as usize;
+                *cell = val;
             } else if *cell == 'E' as usize {
                 end = (x, y);
                 *cell = 'z' as usize;
@@ -45,8 +75,28 @@ impl Day for Day12 {
         let mut grid = input.clone();
         let (start, end) = find_start_end(&mut grid);
         println!("{:?}, {:?}", start, end);
-        println!("{:?}", input[0][0]);
-        println!("{:?}", input[start.0][start.1]);
+        let mut open_set = BinaryHeap::<OpenPos>::new();
+        open_set.push(OpenPos {
+            x: 12,
+            y: 13,
+            cost: 5,
+        });
+        open_set.push(OpenPos {
+            x: 12,
+            y: 13,
+            cost: 6,
+        });
+        open_set.push(OpenPos {
+            x: 12,
+            y: 13,
+            cost: 1,
+        });
+        open_set.push(OpenPos {
+            x: 12,
+            y: 13,
+            cost: 3,
+        });
+        println!("{open_set:?}");
         0
     }
 
