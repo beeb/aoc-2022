@@ -51,7 +51,7 @@ pub trait Day {
 
     fn run_day(fp: &str) {
         match Self::parse_file(fp) {
-            Err(e) => println!("{:?}", e),
+            Err(e) => println!("{e:?}"),
             Ok(input) => {
                 let day_start = Instant::now();
                 println!("Part 1: {}", Self::part_1(&input));
