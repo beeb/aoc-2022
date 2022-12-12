@@ -1,4 +1,7 @@
-use std::{cmp::Ordering, collections::BinaryHeap};
+use std::{
+    cmp::Ordering,
+    collections::{BinaryHeap, HashMap, VecDeque},
+};
 
 use itertools::Itertools;
 use nom::{
@@ -10,11 +13,61 @@ use nom::{
 
 use crate::days::Day;
 
-#[derive(Debug)]
-pub struct OpenPos {
+#[derive(Debug, PartialEq, Eq, Default, Clone, Hash)]
+pub struct Point {
     x: usize,
     y: usize,
+}
+
+impl Point {
+    pub fn distance_to(&self, other: &Point) -> usize {
+        (self.x.max(other.x) - self.x.min(other.x)) + (self.y.max(other.y) - self.y.min(other.y))
+    }
+}
+
+#[derive(Debug)]
+pub struct OpenPos {
+    point: Point,
     cost: usize,
+}
+
+impl OpenPos {
+    pub fn valid_neighbors(&self, grid: &Vec<Vec<usize>>) -> Vec<Point> {
+        let mut n = Vec::<Point>::with_capacity(4);
+        if self.point.x > 0
+            && grid[self.point.x - 1][self.point.y] <= grid[self.point.x][self.point.y] + 1
+        {
+            n.push(Point {
+                x: self.point.x - 1,
+                y: self.point.y,
+            })
+        }
+        if self.point.y < grid[0].len() - 1
+            && grid[self.point.x][self.point.y + 1] <= grid[self.point.x][self.point.y] + 1
+        {
+            n.push(Point {
+                x: self.point.x,
+                y: self.point.y + 1,
+            })
+        }
+        if self.point.x < grid.len() - 1
+            && grid[self.point.x + 1][self.point.y] <= grid[self.point.x][self.point.y] + 1
+        {
+            n.push(Point {
+                x: self.point.x + 1,
+                y: self.point.y,
+            })
+        }
+        if self.point.y > 0
+            && grid[self.point.x][self.point.y - 1] <= grid[self.point.x][self.point.y] + 1
+        {
+            n.push(Point {
+                x: self.point.x,
+                y: self.point.y - 1,
+            })
+        }
+        n
+    }
 }
 
 impl Eq for OpenPos {}
@@ -39,17 +92,17 @@ impl Ord for OpenPos {
 
 pub struct Day12;
 
-fn find_start_end(input: &mut <Day12 as Day>::Input) -> ((usize, usize), (usize, usize)) {
-    let mut start = (0, 0);
-    let mut end = (0, 0);
+fn find_start_end(input: &mut <Day12 as Day>::Input) -> (Point, Point) {
+    let mut start = Point::default();
+    let mut end = Point::default();
     for (x, row) in input.iter_mut().enumerate() {
         for (y, cell) in row.iter_mut().enumerate() {
             if *cell == 'S' as usize {
-                start = (x, y);
+                start = Point { x, y };
                 let val = 'a' as usize;
                 *cell = val;
             } else if *cell == 'E' as usize {
-                end = (x, y);
+                end = Point { x, y };
                 *cell = 'z' as usize;
             }
         }
@@ -57,8 +110,16 @@ fn find_start_end(input: &mut <Day12 as Day>::Input) -> ((usize, usize), (usize,
     (start, end)
 }
 
-fn distance_to_end(x: usize, y: usize, end_x: usize, end_y: usize) -> usize {
-    (x.max(end_x) - x.min(end_x)) + (y.max(end_y) - y.min(end_y))
+fn path_len(came_from: HashMap<Point, Point>, current: &Point) -> usize {
+    let mut path: VecDeque<&Point> = VecDeque::new();
+    path.push_front(current);
+    let mut current = current;
+    while came_from.contains_key(current) {
+        current = came_from.get(current).unwrap();
+        path.push_front(current)
+    }
+    println!("{path:?}");
+    path.len()
 }
 
 impl Day for Day12 {
@@ -79,13 +140,22 @@ impl Day for Day12 {
         let mut grid = input.clone();
         let (start, end) = find_start_end(&mut grid);
         println!("{:?}, {:?}", start, end);
+        // implement A* algorithm
         let mut open_set = BinaryHeap::<OpenPos>::new();
         open_set.push(OpenPos {
-            x: start.0,
-            y: start.1,
-            cost: distance_to_end(start.0, start.1, end.0, end.1),
+            point: start.clone(),
+            cost: start.distance_to(&end),
         });
-        println!("{open_set:?}");
+        let mut came_from = HashMap::<Point, Point>::new();
+        let mut g_score = HashMap::<Point, usize>::new();
+        g_score.insert(start, 0);
+
+        while let Some(current) = open_set.pop() {
+            if current.point == end {
+                return path_len(came_from, &current.point);
+            }
+        }
+
         0
     }
 
