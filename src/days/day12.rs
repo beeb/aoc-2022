@@ -150,6 +150,43 @@ fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
     }
 }
 
+fn a_star(grid: &Vec<Vec<usize>>, start: Point, end: &Point, print: bool) -> Option<usize> {
+    // implement A* algorithm
+    let mut open_set = BinaryHeap::<OpenPos>::new();
+    open_set.push(OpenPos {
+        point: start.clone(),
+        cost: start.distance_to(end), // f-score
+    });
+    let mut came_from = HashMap::<Point, Point>::new();
+    let mut g_score = HashMap::<Point, usize>::new();
+    g_score.insert(start, 0);
+
+    while let Some(current) = open_set.pop() {
+        if current.point == *end {
+            let path = path(came_from, current.point);
+            if print {
+                print_path(&path, grid);
+            }
+            return Some(path.len() - 1);
+        }
+
+        for n in current.valid_neighbors(grid).iter() {
+            let tentative_gscore = g_score[&current.point] + 1;
+            if tentative_gscore < *g_score.get(n).unwrap_or(&usize::MAX) {
+                came_from.insert(n.clone(), current.point.clone());
+                g_score.insert(n.clone(), tentative_gscore);
+                let pos = OpenPos {
+                    point: n.clone(),
+                    cost: tentative_gscore + n.distance_to(end), // f-score
+                };
+                open_set.retain(|p| p.point != pos.point);
+                open_set.push(pos);
+            }
+        }
+    }
+    None
+}
+
 impl Day for Day12 {
     type Input = Vec<Vec<usize>>;
 
@@ -167,44 +204,25 @@ impl Day for Day12 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut grid = input.clone();
         let (start, end) = find_start_end(&mut grid);
-        // implement A* algorithm
-        let mut open_set = BinaryHeap::<OpenPos>::new();
-        open_set.push(OpenPos {
-            point: start.clone(),
-            cost: start.distance_to(&end),
-        });
-        let mut came_from = HashMap::<Point, Point>::new();
-        let mut g_score = HashMap::<Point, usize>::new();
-        g_score.insert(start, 0);
-
-        while let Some(current) = open_set.pop() {
-            if current.point == end {
-                let path = path(came_from, current.point);
-                print_path(&path, &grid);
-                return path.len() - 1;
-            }
-
-            for n in current.valid_neighbors(&grid).iter() {
-                let tentative_gscore = g_score[&current.point] + 1;
-                if tentative_gscore < *g_score.get(n).unwrap_or(&usize::MAX) {
-                    came_from.insert(n.clone(), current.point.clone());
-                    g_score.insert(n.clone(), tentative_gscore);
-                    let pos = OpenPos {
-                        point: n.clone(),
-                        cost: tentative_gscore + n.distance_to(&end),
-                    };
-                    open_set.retain(|p| p.point != pos.point);
-                    open_set.push(pos);
-                }
-            }
-        }
-
-        0
+        a_star(&grid, start, &end, true).unwrap()
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut grid = input.clone();
+        let (_, end) = find_start_end(&mut grid);
+        let mut lengths = Vec::<usize>::with_capacity(1000);
+        for (x, row) in grid.iter().enumerate() {
+            for (y, cell) in row.iter().enumerate() {
+                if *cell != 'a' as usize {
+                    continue;
+                }
+                if let Some(steps) = a_star(&grid, Point { x, y }, &end, false) {
+                    lengths.push(steps)
+                }
+            }
+        }
+        *lengths.iter().min().unwrap()
     }
 }
