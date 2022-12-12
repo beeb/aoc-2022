@@ -136,26 +136,28 @@ fn path(came_from: HashMap<Point, Point>, current: Point) -> VecDeque<Point> {
 
 /// Print a colorful representation of the path in the grid
 fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
+    let gradient = colorous::PLASMA;
     for (x, row) in grid.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
             let point = Point { x, y };
+            let color = gradient.eval_rational(*cell - 97, 26);
             if path.contains(&point) {
                 print!(
                     "{}",
                     char::from_u32(*cell as u32)
                         .unwrap()
                         .to_string()
-                        .red()
-                        .bold()
+                        .on_truecolor(color.r, color.g, color.b)
+                        .truecolor(255, 255, 255)
                 );
             } else {
                 print!(
                     "{}",
-                    char::from_u32(*cell as u32).unwrap().to_string().truecolor(
-                        (*cell as u8 - 97) * 10,
-                        255,
-                        (*cell as u8 - 97) * 10,
-                    )
+                    char::from_u32(*cell as u32)
+                        .unwrap()
+                        .to_string()
+                        .on_truecolor(color.r, color.g, color.b)
+                        .truecolor(0, 0, 0)
                 );
             }
         }
