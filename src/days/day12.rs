@@ -154,6 +154,20 @@ impl Day for Day12 {
             if current.point == end {
                 return path_len(came_from, &current.point);
             }
+
+            for n in current.valid_neighbors(&grid).iter() {
+                let tentative_gscore = g_score[&current.point] + 1;
+                if tentative_gscore < *g_score.get(n).unwrap_or(&usize::MAX) {
+                    came_from.insert(n.clone(), current.point.clone());
+                    g_score.insert(n.clone(), tentative_gscore);
+                    let pos = OpenPos {
+                        point: n.clone(),
+                        cost: tentative_gscore + n.distance_to(&end),
+                    };
+                    open_set.retain(|p| p.point != pos.point);
+                    open_set.push(pos);
+                }
+            }
         }
 
         0
