@@ -3,6 +3,7 @@ use std::{
     collections::{BinaryHeap, HashMap, VecDeque},
 };
 
+use colored::Colorize;
 use itertools::Itertools;
 use nom::{
     character::complete::{line_ending, not_line_ending},
@@ -121,14 +122,28 @@ fn path(came_from: HashMap<Point, Point>, current: Point) -> VecDeque<Point> {
     path
 }
 
-fn print_path(path: &VecDeque<Point>, grid: &Vec<Vec<usize>>) {
+fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
     for (x, row) in grid.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
             let point = Point { x, y };
             if path.contains(&point) {
-                print!("*");
+                print!(
+                    "{}",
+                    char::from_u32(*cell as u32)
+                        .unwrap()
+                        .to_string()
+                        .red()
+                        .bold()
+                );
             } else {
-                print!("{}", char::from_u32(*cell as u32).unwrap());
+                print!(
+                    "{}",
+                    char::from_u32(*cell as u32).unwrap().to_string().truecolor(
+                        (*cell as u8 - 97) * 10,
+                        200,
+                        (*cell as u8 - 97) * 10,
+                    )
+                );
             }
         }
         println!();
@@ -166,7 +181,7 @@ impl Day for Day12 {
             if current.point == end {
                 let path = path(came_from, current.point);
                 print_path(&path, &grid);
-                return path.len();
+                return path.len() - 1;
             }
 
             for n in current.valid_neighbors(&grid).iter() {
