@@ -165,7 +165,8 @@ fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
 
 /// Implement the A* algorithm, returning the number of steps in the shortest path.
 ///
-/// This uses the Manhattan distance to the end node as the cost function
+/// This uses the Manhattan distance to the end node as the cost function.
+/// The grid contains the elevation for each node.
 fn a_star(grid: &Vec<Vec<usize>>, start: Point, end: &Point, print: bool) -> Option<usize> {
     // the open_set is the list of all candidates for the next move.
     // this is a min heap (sorting on the cost attribute)
