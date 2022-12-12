@@ -243,7 +243,7 @@ impl Day for Day12 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut grid = input.clone();
         let (start, end) = find_start_end(&mut grid);
-        a_star(&grid, start, &end, false).unwrap()
+        a_star(&grid, start, &end, true).unwrap()
     }
 
     type Output2 = usize;
@@ -264,7 +264,7 @@ impl Day for Day12 {
             }
         }
         let min = lengths.iter().min_by(|a, b| a.0.cmp(&b.0)).unwrap();
-        a_star(&grid, min.1.clone(), &end, false);
+        a_star(&grid, min.1.clone(), &end, true);
         min.0
     }
 }
