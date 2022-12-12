@@ -57,6 +57,10 @@ fn find_start_end(input: &mut <Day12 as Day>::Input) -> ((usize, usize), (usize,
     (start, end)
 }
 
+fn distance_to_end(x: usize, y: usize, end_x: usize, end_y: usize) -> usize {
+    (x.max(end_x) - x.min(end_x)) + (y.max(end_y) - y.min(end_y))
+}
+
 impl Day for Day12 {
     type Input = Vec<Vec<usize>>;
 
@@ -77,24 +81,9 @@ impl Day for Day12 {
         println!("{:?}, {:?}", start, end);
         let mut open_set = BinaryHeap::<OpenPos>::new();
         open_set.push(OpenPos {
-            x: 12,
-            y: 13,
-            cost: 5,
-        });
-        open_set.push(OpenPos {
-            x: 12,
-            y: 13,
-            cost: 6,
-        });
-        open_set.push(OpenPos {
-            x: 12,
-            y: 13,
-            cost: 1,
-        });
-        open_set.push(OpenPos {
-            x: 12,
-            y: 13,
-            cost: 3,
+            x: start.0,
+            y: start.1,
+            cost: distance_to_end(start.0, start.1, end.0, end.1),
         });
         println!("{open_set:?}");
         0
