@@ -140,7 +140,7 @@ fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
                     "{}",
                     char::from_u32(*cell as u32).unwrap().to_string().truecolor(
                         (*cell as u8 - 97) * 10,
-                        200,
+                        255,
                         (*cell as u8 - 97) * 10,
                     )
                 );
@@ -212,17 +212,19 @@ impl Day for Day12 {
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut grid = input.clone();
         let (_, end) = find_start_end(&mut grid);
-        let mut lengths = Vec::<usize>::with_capacity(1000);
+        let mut lengths = Vec::<(usize, Point)>::with_capacity(1000);
         for (x, row) in grid.iter().enumerate() {
             for (y, cell) in row.iter().enumerate() {
                 if *cell != 'a' as usize {
                     continue;
                 }
                 if let Some(steps) = a_star(&grid, Point { x, y }, &end, false) {
-                    lengths.push(steps)
+                    lengths.push((steps, Point { x, y }))
                 }
             }
         }
-        *lengths.iter().min().unwrap()
+        let min = lengths.iter().min_by(|a, b| a.0.cmp(&b.0)).unwrap();
+        a_star(&grid, min.1.clone(), &end, true);
+        min.0
     }
 }
