@@ -110,16 +110,29 @@ fn find_start_end(input: &mut <Day12 as Day>::Input) -> (Point, Point) {
     (start, end)
 }
 
-fn path_len(came_from: HashMap<Point, Point>, current: &Point) -> usize {
-    let mut path: VecDeque<&Point> = VecDeque::new();
-    path.push_front(current);
+fn path(came_from: HashMap<Point, Point>, current: Point) -> VecDeque<Point> {
+    let mut path: VecDeque<Point> = VecDeque::new();
+    path.push_front(current.clone());
     let mut current = current;
-    while came_from.contains_key(current) {
-        current = came_from.get(current).unwrap();
-        path.push_front(current)
+    while came_from.contains_key(&current) {
+        current = came_from.get(&current).unwrap().clone();
+        path.push_front(current.clone())
     }
-    println!("{path:?}");
-    path.len()
+    path
+}
+
+fn print_path(path: &VecDeque<Point>, grid: &Vec<Vec<usize>>) {
+    for (x, row) in grid.iter().enumerate() {
+        for (y, cell) in row.iter().enumerate() {
+            let point = Point { x, y };
+            if path.contains(&point) {
+                print!("*");
+            } else {
+                print!("{}", char::from_u32(*cell as u32).unwrap());
+            }
+        }
+        println!();
+    }
 }
 
 impl Day for Day12 {
@@ -139,7 +152,6 @@ impl Day for Day12 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut grid = input.clone();
         let (start, end) = find_start_end(&mut grid);
-        println!("{:?}, {:?}", start, end);
         // implement A* algorithm
         let mut open_set = BinaryHeap::<OpenPos>::new();
         open_set.push(OpenPos {
@@ -152,7 +164,9 @@ impl Day for Day12 {
 
         while let Some(current) = open_set.pop() {
             if current.point == end {
-                return path_len(came_from, &current.point);
+                let path = path(came_from, current.point);
+                print_path(&path, &grid);
+                return path.len();
             }
 
             for n in current.valid_neighbors(&grid).iter() {

@@ -1,3 +1,4 @@
+#![feature(binary_heap_retain)]
 mod parser;
 use chrono::prelude::*;
 use clap::{Parser, Subcommand};
