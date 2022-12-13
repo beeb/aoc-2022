@@ -164,7 +164,7 @@ impl Day for Day13 {
         let div2 = PacketItem::List(vec![PacketItem::List(vec![PacketItem::Int(6)])]);
         packets.push(&div1);
         packets.push(&div2);
-        // sort the list of packets with our function from part 1
+        // sort the list of packets
         packets.sort();
         // get the positions of each divider
         let first_div = packets.iter().position(|&p| p.is_divider(2)).unwrap();
