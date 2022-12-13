@@ -26,15 +26,7 @@ impl PartialOrd for PacketItem {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (PacketItem::Int(a), PacketItem::Int(b)) => Some(a.cmp(b)),
-            (PacketItem::List(a), PacketItem::List(b)) => {
-                for (ax, bx) in a.iter().zip(b.iter()) {
-                    if ax == bx {
-                        continue;
-                    }
-                    return Some(ax.cmp(bx));
-                }
-                Some(a.len().cmp(&b.len()))
-            }
+            (PacketItem::List(a), PacketItem::List(b)) => Some(a.cmp(b)),
             (PacketItem::Int(_), PacketItem::List(_)) => {
                 Some(PacketItem::List(vec![self.clone()]).cmp(other))
             }
