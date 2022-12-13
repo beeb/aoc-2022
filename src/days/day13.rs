@@ -19,6 +19,55 @@ pub enum PacketItem {
     List(Vec<PacketItem>),
 }
 
+impl Eq for PacketItem {}
+
+impl PartialOrd for PacketItem {
+    /// Check if two packets or packet items are in the right order (Ordering::Less)
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (PacketItem::Int(a), PacketItem::Int(b)) => {
+                if a == b {
+                    return Some(Ordering::Equal);
+                }
+                Some(a.cmp(b))
+            }
+            (PacketItem::List(a), PacketItem::List(b)) => {
+                for (ax, bx) in a.iter().zip(b.iter()) {
+                    if ax == bx {
+                        continue;
+                    }
+                    return Some(ax.cmp(bx));
+                }
+                if a.len() == b.len() {
+                    return Some(Ordering::Equal);
+                }
+                Some(a.len().cmp(&b.len()))
+            }
+            (PacketItem::Int(_), PacketItem::List(_)) => {
+                Some(PacketItem::List(vec![self.clone()]).cmp(other))
+            }
+            (PacketItem::List(_), PacketItem::Int(_)) => {
+                Some(self.cmp(&PacketItem::List(vec![other.clone()])))
+            }
+        }
+    }
+}
+
+impl PartialEq for PacketItem {
+    fn eq(&self, other: &Self) -> bool {
+        let Some(Ordering::Equal) = self.partial_cmp(other) else {
+            return false;
+        };
+        true
+    }
+}
+
+impl Ord for PacketItem {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
 impl PacketItem {
     /// The dividiers are a list of list of a single int (2 or 6)
     pub fn is_divider(&self, val: u8) -> bool {
@@ -76,10 +125,7 @@ fn parse_item(input: &str) -> IResult<&str, PacketItem> {
     alt((map(u8, PacketItem::Int), map(parse_list, PacketItem::List)))(input)
 }
 
-/// Check if two packets or packet items are in the right order
-///
-/// None represents equality. This is recursive also
-fn is_ordered(first: &PacketItem, second: &PacketItem) -> Option<bool> {
+/* fn is_ordered(first: &PacketItem, second: &PacketItem) -> Option<bool> {
     match (first, second) {
         (PacketItem::Int(a), PacketItem::Int(b)) => {
             if a == b {
@@ -107,7 +153,7 @@ fn is_ordered(first: &PacketItem, second: &PacketItem) -> Option<bool> {
             is_ordered(first, &PacketItem::List(vec![second.clone()]))
         }
     }
-}
+} */
 
 pub struct Day13;
 
@@ -129,16 +175,12 @@ impl Day for Day13 {
     /// Part 1 took 0.024534ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // store the ordered status for each pair of packets
-        let mut ordered: Vec<Option<bool>> = vec![None; input.len()];
+        let mut ordered: Vec<bool> = vec![false; input.len()];
         for (i, packets) in input.iter().enumerate() {
-            ordered[i] = is_ordered(&packets.first, &packets.second);
+            ordered[i] = packets.first < packets.second;
         }
         // get the positions where the ordering is `true` (+1) and sum them
-        ordered
-            .iter()
-            .positions(|o| o.is_some() && o.unwrap())
-            .map(|p| p + 1)
-            .sum()
+        ordered.iter().positions(|o| *o).map(|p| p + 1).sum()
     }
 
     type Output2 = usize;
@@ -153,11 +195,7 @@ impl Day for Day13 {
         packets.push(&div1);
         packets.push(&div2);
         // sort the list of packets with our function from part 1
-        packets.sort_by(|a, b| match is_ordered(a, b) {
-            Some(true) => Ordering::Less,
-            Some(false) => Ordering::Greater,
-            None => Ordering::Equal,
-        });
+        packets.sort();
         // get the positions of each divider
         let first_div = packets.iter().position(|&p| p.is_divider(2)).unwrap();
         let second_div = packets.iter().position(|&p| p.is_divider(6)).unwrap();
