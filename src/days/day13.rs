@@ -142,7 +142,7 @@ impl Day for Day13 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.024534ms
+    /// Part 1 took 0.051101ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // store the ordered status for each pair of packets
         let mut ordered: Vec<bool> = vec![false; input.len()];
@@ -155,7 +155,7 @@ impl Day for Day13 {
 
     type Output2 = usize;
 
-    /// Part 2 took 0.281495ms
+    /// Part 2 took 0.857766ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // get a flat vec of all the packets
         let mut packets = input.iter().flat_map(|p| p.as_vec()).collect_vec();
