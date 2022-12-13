@@ -25,21 +25,13 @@ impl PartialOrd for PacketItem {
     /// Check if two packets or packet items are in the right order (Ordering::Less)
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
-            (PacketItem::Int(a), PacketItem::Int(b)) => {
-                if a == b {
-                    return Some(Ordering::Equal);
-                }
-                Some(a.cmp(b))
-            }
+            (PacketItem::Int(a), PacketItem::Int(b)) => Some(a.cmp(b)),
             (PacketItem::List(a), PacketItem::List(b)) => {
                 for (ax, bx) in a.iter().zip(b.iter()) {
                     if ax == bx {
                         continue;
                     }
                     return Some(ax.cmp(bx));
-                }
-                if a.len() == b.len() {
-                    return Some(Ordering::Equal);
                 }
                 Some(a.len().cmp(&b.len()))
             }
