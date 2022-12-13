@@ -95,12 +95,12 @@ impl PacketItem {
 }
 
 #[derive(Debug, Clone)]
-pub struct Packets {
+pub struct Pair {
     pub first: PacketItem,
     pub second: PacketItem,
 }
 
-impl Packets {
+impl Pair {
     /// Return the two members as a vec (for later flattening)
     fn as_vec(&self) -> Vec<&PacketItem> {
         vec![&self.first, &self.second]
@@ -158,14 +158,14 @@ fn parse_item(input: &str) -> IResult<&str, PacketItem> {
 pub struct Day13;
 
 impl Day for Day13 {
-    type Input = Vec<Packets>;
+    type Input = Vec<Pair>;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
         separated_list0(
             count(line_ending, 2),
             map(
                 tuple((parse_item, line_ending, parse_item)),
-                |(first, _, second)| Packets { first, second },
+                |(first, _, second)| Pair { first, second },
             ),
         )(input)
     }
