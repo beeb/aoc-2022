@@ -125,36 +125,6 @@ fn parse_item(input: &str) -> IResult<&str, PacketItem> {
     alt((map(u8, PacketItem::Int), map(parse_list, PacketItem::List)))(input)
 }
 
-/* fn is_ordered(first: &PacketItem, second: &PacketItem) -> Option<bool> {
-    match (first, second) {
-        (PacketItem::Int(a), PacketItem::Int(b)) => {
-            if a == b {
-                return None;
-            }
-            Some(a < b)
-        }
-        (PacketItem::List(a), PacketItem::List(b)) => {
-            for (ax, bx) in a.iter().zip(b.iter()) {
-                let comp = is_ordered(ax, bx);
-                if comp.is_none() {
-                    continue;
-                }
-                return comp;
-            }
-            if a.len() == b.len() {
-                return None;
-            }
-            Some(a.len() < b.len())
-        }
-        (PacketItem::Int(_), PacketItem::List(_)) => {
-            is_ordered(&PacketItem::List(vec![first.clone()]), second)
-        }
-        (PacketItem::List(_), PacketItem::Int(_)) => {
-            is_ordered(first, &PacketItem::List(vec![second.clone()]))
-        }
-    }
-} */
-
 pub struct Day13;
 
 impl Day for Day13 {
