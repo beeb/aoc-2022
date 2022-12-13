@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use itertools::Itertools;
 use nom::{
     branch::alt,
@@ -16,10 +18,41 @@ pub enum PacketItem {
     List(Vec<PacketItem>),
 }
 
+impl PacketItem {
+    pub fn is_divider(&self, val: u8) -> bool {
+        match self {
+            Self::Int(_) => false,
+            Self::List(i) => {
+                if i.len() != 1 {
+                    return false;
+                }
+                match &i[0] {
+                    Self::Int(_) => false,
+                    Self::List(ii) => {
+                        if ii.len() != 1 {
+                            return false;
+                        }
+                        match &ii[0] {
+                            Self::List(_) => false,
+                            Self::Int(iii) => *iii == val,
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Packets {
     pub first: PacketItem,
     pub second: PacketItem,
+}
+
+impl Packets {
+    fn as_vec(&self) -> Vec<&PacketItem> {
+        vec![&self.first, &self.second]
+    }
 }
 
 fn parse_int(input: &str) -> IResult<&str, u8> {
@@ -104,7 +137,19 @@ impl Day for Day13 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut packets = input.iter().flat_map(|p| p.as_vec()).collect_vec();
+        let div1 = PacketItem::List(vec![PacketItem::List(vec![PacketItem::Int(2)])]);
+        let div2 = PacketItem::List(vec![PacketItem::List(vec![PacketItem::Int(6)])]);
+        packets.push(&div1);
+        packets.push(&div2);
+        packets.sort_by(|a, b| match is_ordered(a, b) {
+            Some(true) => Ordering::Less,
+            Some(false) => Ordering::Greater,
+            None => Ordering::Equal,
+        });
+        let first_div = packets.iter().position(|&p| p.is_divider(2)).unwrap();
+        let second_div = packets.iter().position(|&p| p.is_divider(6)).unwrap();
+        (first_div + 1) * (second_div + 1)
     }
 }
