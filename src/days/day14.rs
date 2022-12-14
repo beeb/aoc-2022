@@ -158,26 +158,27 @@ impl Day for Day14 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let (top_left, bottom_right) = grid_bounds(input);
         // in grid, false is air, true is obstacle
+        // the x coordinates are shifted so they start at 0 (we should always subtract x_min)
         let mut grid = vec![vec![false; bottom_right.y + 1]; bottom_right.x - top_left.x + 1];
         init_grid(&mut grid, input, top_left.x);
         let mut sand_counter = 0usize;
         let mut cont = true;
         while cont {
             let mut sand = Point {
-                x: 500 - top_left.x,
+                x: 500 - top_left.x, // shift x coordinate so we start at 0
                 y: 0,
             };
             loop {
                 match sand.can_move(&mut grid) {
                     Some(true) => {
-                        continue;
+                        continue; // sand is still moving down
                     }
                     Some(false) => {
-                        sand_counter += 1;
+                        sand_counter += 1; // sand hit an obstacle
                         break;
                     }
                     None => {
-                        cont = false;
+                        cont = false; // sand fell off the grid, we're done
                         break;
                     }
                 }
@@ -194,27 +195,29 @@ impl Day for Day14 {
         // so our grid stops at y=10 (11 rows) and if it exceeds the bounds, we hit the floor
         let floor_y = bottom_right.y + 2;
         // in grid, false is air, true is obstacle
+        // the x coordinates are shifted so they start at 0 (we should always subtract x_min)
         let mut grid = VecDeque::from(vec![vec![false; floor_y]; bottom_right.x - top_left.x + 1]);
-        // we will expand grid in x if needed
+        // we will expand grid in x if needed, changing top_left.x if we expand on the left
         init_grid(&mut grid, input, top_left.x);
         let mut sand_counter = 0usize;
         let mut cont = true;
         while cont {
             let mut sand = Point {
-                x: 500 - top_left.x,
+                x: 500 - top_left.x, // shift x coordinate so we start at 0
                 y: 0,
             };
             loop {
                 match sand.can_move2(&mut grid, &mut top_left) {
                     Some(true) => {
-                        continue;
+                        continue; // sand is still moving down
                     }
                     Some(false) => {
-                        sand_counter += 1;
+                        sand_counter += 1; // sand has hit an obstacle
                         break;
                     }
                     None => {
-                        sand_counter += 1;
+                        // sand cannot fall anymore, we're done
+                        sand_counter += 1; // the last sand grain doesn't fall off, we need to count it
                         cont = false;
                         break;
                     }
