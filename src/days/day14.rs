@@ -50,13 +50,18 @@ fn grid_bounds(input: &[RockFormation]) -> (Point, Point) {
     (Point { x: min_x, y: min_y }, Point { x: max_x, y: max_y })
 }
 
-fn init_grid(grid: &mut Vec<Vec<bool>>, input: &[RockFormation]) {
+fn init_grid(grid: &mut Vec<Vec<bool>>, input: &[RockFormation], x_min: usize) {
     for rock in input {
         for (start, end) in rock.path.iter().tuple_windows() {
             if start.x == end.x {
                 // vertical
                 for i in start.y..=end.y {
                     grid[start.x][i] = true;
+                }
+            } else if start.y == end.y {
+                // horizontal
+                for i in start.x - x_min..=end.x - x_min {
+                    grid[i][start.y] = true;
                 }
             }
         }
