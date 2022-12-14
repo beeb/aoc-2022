@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
+use std::{collections::VecDeque, ops::IndexMut};
 
-use itertools::Itertools;
+use itertools::{Itertools, MinMaxResult};
 use nom::{
     bytes::complete::tag,
     character::complete::{char, line_ending, u64},
@@ -89,56 +89,28 @@ pub struct RockFormation {
 }
 
 fn grid_bounds(input: &[RockFormation]) -> (Point, Point) {
-    let max_x = input
+    let MinMaxResult::MinMax(min_x, max_x) = input
         .iter()
         .flat_map(|p| &p.path)
         .map(|p| p.x)
-        .max()
-        .unwrap();
-    let min_x = input
-        .iter()
-        .flat_map(|p| &p.path)
-        .map(|p| p.x)
-        .min()
-        .unwrap();
-    let max_y = input
+        .minmax() else {
+            unreachable!();
+        };
+    let MinMaxResult::MinMax(min_y, max_y) = input
         .iter()
         .flat_map(|p| &p.path)
         .map(|p| p.y)
-        .max()
-        .unwrap();
-    let min_y = input
-        .iter()
-        .flat_map(|p| &p.path)
-        .map(|p| p.y)
-        .min()
-        .unwrap();
+        .minmax() else {
+            unreachable!();
+        };
     (Point { x: min_x, y: min_y }, Point { x: max_x, y: max_y })
 }
 
-fn init_grid(grid: &mut [Vec<bool>], input: &[RockFormation], x_min: usize) {
-    for rock in input {
-        for (start, end) in rock.path.iter().tuple_windows() {
-            if start.x == end.x {
-                // vertical
-                let min = start.y.min(end.y);
-                let max = start.y.max(end.y);
-                for i in min..=max {
-                    grid[start.x - x_min][i] = true;
-                }
-            } else if start.y == end.y {
-                // horizontal
-                let min = (start.x - x_min).min(end.x - x_min);
-                let max = (start.x - x_min).max(end.x - x_min);
-                for i in min..=max {
-                    grid[i][start.y] = true;
-                }
-            }
-        }
-    }
-}
-
-fn init_grid2(grid: &mut VecDeque<Vec<bool>>, input: &[RockFormation], x_min: usize) {
+fn init_grid(
+    grid: &mut impl IndexMut<usize, Output = Vec<bool>>,
+    input: &[RockFormation],
+    x_min: usize,
+) {
     for rock in input {
         for (start, end) in rock.path.iter().tuple_windows() {
             if start.x == end.x {
@@ -224,7 +196,7 @@ impl Day for Day14 {
         // in grid, false is air, true is obstacle
         let mut grid = VecDeque::from(vec![vec![false; floor_y]; bottom_right.x - top_left.x + 1]);
         // we will expand grid in x if needed
-        init_grid2(&mut grid, input, top_left.x);
+        init_grid(&mut grid, input, top_left.x);
         let mut sand_counter = 0usize;
         let mut cont = true;
         while cont {
