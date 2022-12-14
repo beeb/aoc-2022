@@ -1,11 +1,10 @@
 use itertools::Itertools;
 use nom::{
-    branch::alt,
     bytes::complete::tag,
     character::complete::{char, line_ending, u64},
-    combinator::{cut, map},
-    multi::{count, separated_list0},
-    sequence::{preceded, terminated, tuple},
+    combinator::map,
+    multi::separated_list0,
+    sequence::tuple,
     IResult,
 };
 
@@ -95,7 +94,7 @@ impl Day for Day14 {
         let (top_left, bottom_right) = grid_bounds(input);
         // in grid, false is air, true is obstacle
         let mut grid = vec![vec![false; bottom_right.x - top_left.x]; bottom_right.y + 1];
-
+        init_grid(&mut grid, input, top_left.x);
         0
     }
 
