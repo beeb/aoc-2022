@@ -10,6 +10,16 @@ use nom::{
 
 use crate::days::Day;
 
+fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
+where
+    T: Clone,
+{
+    assert!(!v.is_empty());
+    (0..v[0].len())
+        .map(|i| v.iter().map(|inner| inner[i].clone()).collect_vec())
+        .collect()
+}
+
 #[derive(Debug)]
 pub struct Point {
     x: usize,
@@ -82,12 +92,16 @@ fn init_grid(grid: &mut [Vec<bool>], input: &[RockFormation], x_min: usize) {
         for (start, end) in rock.path.iter().tuple_windows() {
             if start.x == end.x {
                 // vertical
-                for i in start.y..=end.y {
+                let min = start.y.min(end.y);
+                let max = start.y.max(end.y);
+                for i in min..=max {
                     grid[start.x - x_min][i] = true;
                 }
             } else if start.y == end.y {
                 // horizontal
-                for i in start.x - x_min..=end.x - x_min {
+                let min = (start.x - x_min).min(end.x - x_min);
+                let max = (start.x - x_min).max(end.x - x_min);
+                for i in min..=max {
                     grid[i][start.y] = true;
                 }
             }
@@ -146,6 +160,21 @@ impl Day for Day14 {
                 }
             }
         }
+        // print with transpose
+        /* let transp = transpose(&grid);
+        for row in transp.iter() {
+            for cell in row.iter() {
+                match cell {
+                    true => {
+                        print!("#");
+                    }
+                    false => {
+                        print!(".");
+                    }
+                }
+            }
+            println!();
+        } */
         sand_counter
     }
 
