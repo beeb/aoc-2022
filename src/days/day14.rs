@@ -12,16 +12,6 @@ use nom::{
 
 use crate::days::Day;
 
-fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
-where
-    T: Clone,
-{
-    assert!(!v.is_empty());
-    (0..v[0].len())
-        .map(|i| v.iter().map(|inner| inner[i].clone()).collect_vec())
-        .collect()
-}
-
 #[derive(Debug)]
 pub struct Point {
     x: usize,
@@ -252,6 +242,7 @@ impl Day for Day14 {
                         break;
                     }
                     None => {
+                        sand_counter += 1;
                         cont = false;
                         break;
                     }
