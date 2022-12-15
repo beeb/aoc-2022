@@ -118,7 +118,7 @@ impl Day for Day07 {
         *sizes
             .values()
             .sorted() // sort the values in the map
-            .find(|a| *a >= &to_be_freed) // and find the first that is large enough
+            .find(|&a| *a >= to_be_freed) // and find the first that is large enough
             .unwrap()
     }
 }
