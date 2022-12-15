@@ -58,7 +58,7 @@ fn ranges_with_no_beacons(input: &BTreeMap<Point, Device>, y: isize) -> Vec<(isi
         let span = closest_beacon_dist - vert_dist;
         ranges.push((pos.x - span, pos.x + span)); // both inclusive
     }
-    ranges.sort_by(|a, b| a.0.cmp(&b.0)); // sort the ranges by their lowest bound
+    ranges.sort_unstable_by_key(|r| r.0); // sort the ranges by their lowest bound
     let mut merged = vec![*ranges.first().unwrap()]; // push the first range
     for (start, end) in ranges.iter().skip(1) {
         let &last = merged.last().unwrap();
