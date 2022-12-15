@@ -38,10 +38,10 @@ impl Device {
         self_pos.dist(closest_beacon)
     }
 
-    pub fn pos_in_no_beacon_zone(&self, self_pos: &Point, pos: &Point) -> bool {
+    /* pub fn pos_in_no_beacon_zone(&self, self_pos: &Point, pos: &Point) -> bool {
         let min_dist = self.closest_beacon_distance(self_pos);
         self_pos.dist(pos) <= min_dist
-    }
+    } */
 }
 
 pub struct Day15;
@@ -87,11 +87,11 @@ impl Day for Day15 {
         Ok((rest, devices))
     }
 
-    type Output1 = usize;
+    type Output1 = isize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let y: isize = 2_000_000;
-        let mut no_beacon_pos = BTreeSet::<Point>::new();
+        let mut no_beacon_ranges = Vec::<(isize, isize)>::with_capacity(30);
         for (pos, device) in input {
             if matches!(device, Device::Beacon) {
                 continue;
@@ -102,17 +102,37 @@ impl Day for Day15 {
                 continue; // the beacon is not affecting this line
             }
             let span = closest_beacon_dist - vert_dist;
-            for x in pos.x - span..=pos.x + span {
-                no_beacon_pos.insert(Point { x, y });
+            no_beacon_ranges.push((pos.x - span, pos.x + span)); // both inclusive
+        }
+        no_beacon_ranges.sort_by(|a, b| a.0.cmp(&b.0));
+        let mut merged = vec![*no_beacon_ranges.first().unwrap()];
+        for (start, end) in no_beacon_ranges.iter().skip(1) {
+            let &last = merged.last().unwrap();
+            if last.0 <= *start && *start <= last.1 {
+                let last = merged.pop().unwrap();
+                merged.push((last.0, last.1.max(*end)));
+            } else {
+                merged.push((*start, *end));
             }
         }
+        let mut count = merged
+            .iter()
+            .map(|(start, end)| *end - *start + 1)
+            .sum::<isize>();
         for (pos, device) in input {
             if matches!(device, Device::Sensor(_)) {
                 continue;
             }
-            no_beacon_pos.remove(pos);
+            if pos.y != y {
+                continue;
+            }
+            for (start, end) in merged.iter() {
+                if pos.x >= *start && pos.x <= *end {
+                    count -= 1;
+                }
+            }
         }
-        no_beacon_pos.len()
+        count
     }
 
     type Output2 = usize;
