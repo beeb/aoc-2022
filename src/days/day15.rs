@@ -19,6 +19,7 @@ pub struct Point {
 }
 
 impl Point {
+    /// Manhattan distance to another point
     pub fn dist(&self, other: &Self) -> isize {
         (self.x.max(other.x) - self.x.min(other.x)) + (self.y.max(other.y) - self.y.min(other.y))
     }
@@ -31,19 +32,18 @@ pub enum Device {
 }
 
 impl Device {
+    /// Get the Manhattan distance to the closest beacon from a Sensor
     pub fn closest_beacon_distance(&self, self_pos: &Point) -> isize {
         let Self::Sensor(closest_beacon) = self else {
             unimplemented!("function only valid for sensors");
         };
         self_pos.dist(closest_beacon)
     }
-
-    /* pub fn pos_in_no_beacon_zone(&self, self_pos: &Point, pos: &Point) -> bool {
-        let min_dist = self.closest_beacon_distance(self_pos);
-        self_pos.dist(pos) <= min_dist
-    } */
 }
 
+/// For each Sensor and for a given y coordinate (row), find all the ranges where no beacon can be present, then merge
+/// them. For most rows, only 1 range remains. If an interval or coordinate is not covered by any Sensor, it means an
+/// untracked beacon could be present there.
 fn ranges_with_no_beacons(input: &BTreeMap<Point, Device>, y: isize) -> Vec<(isize, isize)> {
     let mut ranges = Vec::<(isize, isize)>::with_capacity(30);
     for (pos, device) in input {
@@ -58,14 +58,17 @@ fn ranges_with_no_beacons(input: &BTreeMap<Point, Device>, y: isize) -> Vec<(isi
         let span = closest_beacon_dist - vert_dist;
         ranges.push((pos.x - span, pos.x + span)); // both inclusive
     }
-    ranges.sort_by(|a, b| a.0.cmp(&b.0));
-    let mut merged = vec![*ranges.first().unwrap()];
+    ranges.sort_by(|a, b| a.0.cmp(&b.0)); // sort the ranges by their lowest bound
+    let mut merged = vec![*ranges.first().unwrap()]; // push the first range
     for (start, end) in ranges.iter().skip(1) {
         let &last = merged.last().unwrap();
         if last.0 <= *start && *start <= last.1 {
+            // the current range overlaps the previous one
             let last = merged.pop().unwrap();
+            // we update the upper bound for that range, effectively merging them
             merged.push((last.0, last.1.max(*end)));
         } else {
+            // ranges do not overlap, we push the new one
             merged.push((*start, *end));
         }
     }
@@ -119,20 +122,27 @@ impl Day for Day15 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let y: isize = 2_000_000;
+        // get the ranges where no untracked beacons can be present
         let ranges = ranges_with_no_beacons(input, y);
         println!("{ranges:?}");
+        // get the number of positions where no untracked beacon can be present
         let mut count = ranges
             .iter()
             .map(|(start, end)| *end - *start + 1)
             .sum::<isize>();
+        // some tracked beacons might be present on line y = 2M, so we need to decrement 1 for each becon on this line
+        // in the returned range(s).
         for (pos, device) in input {
+            // only consider Beacons
             if matches!(device, Device::Sensor(_)) {
                 continue;
             }
+            // only consider Beacons on the current line
             if pos.y != y {
                 continue;
             }
             for (start, end) in ranges.iter() {
+                // in case the beacon is in a range where no untracked beacon can be, we decrement the count
                 if pos.x >= *start && pos.x <= *end {
                     count -= 1;
                 }
@@ -144,10 +154,16 @@ impl Day for Day15 {
     type Output2 = isize;
 
     fn part_2(input: &Self::Input) -> Self::Output2 {
+        // scan all rows
         for y in 0..=4_000_000 {
+            // get all ranges where no untracked beacons can be
             let ranges = ranges_with_no_beacons(input, y);
+            // in case there are more than 1 ranges, it means there is an interval in-between where an untracked
+            // beacon could be. Since only 1 position for the untracked beacon is possible, it has to be one above
+            // the upper bound of the first range.
             if ranges.len() > 1 {
                 let x = ranges[0].1 + 1;
+                // calculate the tuning frequency
                 return x * 4_000_000 + y;
             }
         }
