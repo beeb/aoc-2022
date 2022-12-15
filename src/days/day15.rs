@@ -120,6 +120,7 @@ impl Day for Day15 {
 
     type Output1 = isize;
 
+    /// Part 1 took 0.006ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let y: isize = 2_000_000;
         // get the ranges where no untracked beacons can be present
@@ -153,6 +154,7 @@ impl Day for Day15 {
 
     type Output2 = isize;
 
+    /// Part 2 took 256.0502ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // scan all rows
         for y in 0..=4_000_000 {
