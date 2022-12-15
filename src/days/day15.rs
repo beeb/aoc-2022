@@ -53,7 +53,7 @@ fn ranges_with_no_beacons(input: &BTreeMap<Point, Device>, y: isize) -> Vec<(isi
         let vert_dist = (y - pos.y).abs();
         let closest_beacon_dist = device.closest_beacon_distance(pos);
         if closest_beacon_dist < vert_dist {
-            continue; // the beacon is not affecting this line
+            continue; // the sensor is not affecting this line
         }
         let span = closest_beacon_dist - vert_dist;
         ranges.push((pos.x - span, pos.x + span)); // both inclusive
