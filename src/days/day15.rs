@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use nom::{
     bytes::complete::tag,
@@ -42,6 +42,34 @@ impl Device {
         let min_dist = self.closest_beacon_distance(self_pos);
         self_pos.dist(pos) <= min_dist
     } */
+}
+
+fn ranges_with_no_beacons(input: &BTreeMap<Point, Device>, y: isize) -> Vec<(isize, isize)> {
+    let mut ranges = Vec::<(isize, isize)>::with_capacity(30);
+    for (pos, device) in input {
+        if matches!(device, Device::Beacon) {
+            continue;
+        }
+        let vert_dist = (y - pos.y).abs();
+        let closest_beacon_dist = device.closest_beacon_distance(pos);
+        if closest_beacon_dist < vert_dist {
+            continue; // the beacon is not affecting this line
+        }
+        let span = closest_beacon_dist - vert_dist;
+        ranges.push((pos.x - span, pos.x + span)); // both inclusive
+    }
+    ranges.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut merged = vec![*ranges.first().unwrap()];
+    for (start, end) in ranges.iter().skip(1) {
+        let &last = merged.last().unwrap();
+        if last.0 <= *start && *start <= last.1 {
+            let last = merged.pop().unwrap();
+            merged.push((last.0, last.1.max(*end)));
+        } else {
+            merged.push((*start, *end));
+        }
+    }
+    merged
 }
 
 pub struct Day15;
@@ -91,31 +119,9 @@ impl Day for Day15 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let y: isize = 2_000_000;
-        let mut no_beacon_ranges = Vec::<(isize, isize)>::with_capacity(30);
-        for (pos, device) in input {
-            if matches!(device, Device::Beacon) {
-                continue;
-            }
-            let vert_dist = (y - pos.y).abs();
-            let closest_beacon_dist = device.closest_beacon_distance(pos);
-            if closest_beacon_dist < vert_dist {
-                continue; // the beacon is not affecting this line
-            }
-            let span = closest_beacon_dist - vert_dist;
-            no_beacon_ranges.push((pos.x - span, pos.x + span)); // both inclusive
-        }
-        no_beacon_ranges.sort_by(|a, b| a.0.cmp(&b.0));
-        let mut merged = vec![*no_beacon_ranges.first().unwrap()];
-        for (start, end) in no_beacon_ranges.iter().skip(1) {
-            let &last = merged.last().unwrap();
-            if last.0 <= *start && *start <= last.1 {
-                let last = merged.pop().unwrap();
-                merged.push((last.0, last.1.max(*end)));
-            } else {
-                merged.push((*start, *end));
-            }
-        }
-        let mut count = merged
+        let ranges = ranges_with_no_beacons(input, y);
+        println!("{ranges:?}");
+        let mut count = ranges
             .iter()
             .map(|(start, end)| *end - *start + 1)
             .sum::<isize>();
@@ -126,7 +132,7 @@ impl Day for Day15 {
             if pos.y != y {
                 continue;
             }
-            for (start, end) in merged.iter() {
+            for (start, end) in ranges.iter() {
                 if pos.x >= *start && pos.x <= *end {
                     count -= 1;
                 }
@@ -135,9 +141,16 @@ impl Day for Day15 {
         count
     }
 
-    type Output2 = usize;
+    type Output2 = isize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        for y in 0..=4_000_000 {
+            let ranges = ranges_with_no_beacons(input, y);
+            if ranges.len() > 1 {
+                let x = ranges[0].1 + 1;
+                return x * 4_000_000 + y;
+            }
+        }
+        panic!("could not find a suitable position");
     }
 }
