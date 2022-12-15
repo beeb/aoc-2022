@@ -7,7 +7,7 @@ use nom::{
     character::complete::{char, line_ending, not_line_ending, u64},
     combinator::map,
     multi::separated_list0,
-    sequence::{pair, tuple},
+    sequence::{pair, separated_pair},
     IResult,
 };
 
@@ -34,8 +34,8 @@ fn parse_line(input: &str) -> IResult<&str, LogItem> {
             LogItem::Dir(dir.to_string())
         }),
         map(
-            tuple((u64, char(' '), not_line_ending::<&str, _>)),
-            |(size, _, _)| LogItem::File(size as usize),
+            separated_pair(u64, char(' '), not_line_ending::<&str, _>),
+            |(size, _)| LogItem::File(size as usize),
         ),
     ))(input)
 }
