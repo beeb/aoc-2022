@@ -20,7 +20,7 @@ pub struct Data {
 }
 
 pub enum Action {
-    MoveTo(NodeIndex),
+    Move,
     OpenValve(NodeIndex),
 }
 
@@ -29,7 +29,7 @@ fn total_released_pressure(actions: &Vec<Action>, graph: &UnGraph<usize, u8>) ->
     let mut open = HashMap::<NodeIndex, usize>::with_capacity(60);
     for action in actions {
         match action {
-            Action::MoveTo(_) => {
+            Action::Move => {
                 total += open.values().sum::<usize>();
             }
             Action::OpenValve(node) => {
@@ -103,5 +103,82 @@ impl Day for Day16 {
 
     fn part_2(_input: &Self::Input) -> Self::Output2 {
         unimplemented!("part_2")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_objective_function() {
+        let mut graph = UnGraph::<usize, u8>::new_undirected();
+        let aa = graph.add_node(0);
+        let bb = graph.add_node(13);
+        let cc = graph.add_node(2);
+        let dd = graph.add_node(20);
+        let ee = graph.add_node(3);
+        let ff = graph.add_node(0);
+        let gg = graph.add_node(0);
+        let hh = graph.add_node(22);
+        let ii = graph.add_node(0);
+        let jj = graph.add_node(21);
+        graph.extend_with_edges([
+            (aa, dd),
+            (aa, ii),
+            (aa, bb),
+            (bb, cc),
+            (bb, aa),
+            (cc, dd),
+            (cc, bb),
+            (dd, cc),
+            (dd, aa),
+            (dd, ee),
+            (ee, ff),
+            (ee, dd),
+            (ff, ee),
+            (ff, gg),
+            (gg, ff),
+            (gg, hh),
+            (hh, gg),
+            (ii, aa),
+            (ii, jj),
+            (jj, ii),
+        ]);
+        let actions = vec![
+            Action::Move,
+            Action::OpenValve(dd),
+            Action::Move,
+            Action::Move,
+            Action::OpenValve(bb),
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::OpenValve(jj),
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::OpenValve(hh),
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::OpenValve(ee),
+            Action::Move,
+            Action::Move,
+            Action::OpenValve(cc),
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+            Action::Move,
+        ];
+        assert_eq!(actions.len(), 30);
+        let total_pressure = total_released_pressure(&actions, &graph);
+        assert_eq!(total_pressure, 1651);
     }
 }
