@@ -21,6 +21,14 @@ pub struct Data {
     pub start: NodeIndex,
 }
 
+/// Recursively map the solution space to find the path that gives the maximum total pressure release
+///
+/// `from` is the node we're currently on
+/// `remaining_time` represents how many more moves we can perform (either moving or opening a valve) until 30 min
+/// `nonzero_valves` is a list of all the nodes in the graph having a non-zero flow
+/// `openened` keeps track of which valves have already been opened (for this particular path)
+/// `distances` is a map of all the node pairs to their shortest distance
+/// (sum of the edges weights for the shortest path)
 fn max_total_released(
     graph: &UnGraph<usize, u8>,
     from: NodeIndex,
@@ -29,30 +37,39 @@ fn max_total_released(
     opened: Vec<NodeIndex>,
     distances: &HashMap<(NodeIndex, NodeIndex), isize>,
 ) -> isize {
+    // we want to find which of all the unvisited unopened valves will yield the highest release
     let mut max_value = 0;
+    // we're out of time, we return 0 and end the recursion
     if remaining_time <= 0 {
         return 0;
     }
+    // we've opened all the valves, we can stop
     if opened.len() == nonzero_valves.len() {
         return 0;
     }
+    // iterate over unopened valves
     for &next_valve in nonzero_valves.iter().filter(|v| !opened.contains(v)) {
-        let dist = distances[&(from, next_valve)];
+        let dist = distances[&(from, next_valve)]; // how long does it take to get there
         if remaining_time > dist {
+            // we only proceed if the node can be reached within the remaining time (including opening)
             let mut opened = opened.clone();
-            opened.push(next_valve);
+            opened.push(next_valve); // record that we've visited this node
+
+            // what is the best release we can get by going to this node? (doesn't include this valve's release)
             let next_total_released = max_total_released(
                 graph,
                 next_valve,
-                remaining_time - dist - 1,
+                remaining_time - dist - 1, // we deduct the travel time + 1 minute for opening
                 nonzero_valves,
                 opened,
                 distances,
             );
-            let acc =
+            // how much pressure would be released by this valve until the end?
+            let will_release =
                 *graph.node_weight(next_valve).unwrap() as isize * (remaining_time - dist - 1);
-            if acc + next_total_released > max_value {
-                max_value = acc + next_total_released;
+            if will_release + next_total_released > max_value {
+                // we record the maximum total release (this node's release and what the children will release)
+                max_value = will_release + next_total_released;
             }
         }
     }
@@ -116,7 +133,9 @@ impl Day for Day16 {
     type Output1 = isize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
+        // Get a map of the shortest distance from any node to any other node in the graph
         let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
+        // Filter the valves that have a non-zero flow
         let nonzero_valves = input
             .graph
             .node_indices()
@@ -126,6 +145,7 @@ impl Day for Day16 {
                 flow > 0
             })
             .collect_vec();
+        // Get the maximum possible pressure release
         max_total_released(
             &input.graph,
             input.start,
@@ -150,15 +170,20 @@ impl Day for Day16 {
                 flow > 0
             })
             .collect_vec();
+        // We can distribute the nodes to visit unevenly (e.g. 1 for me, 14 for elephant) all the way until 7 and 8
         for i in 1..=nonzero_valves.len() / 2 {
+            // Get all the combinations of nodes possible if I choose k valves for my trip
             for my_valves in nonzero_valves.iter().cloned().combinations(i) {
+                // The remaining nodes will be visited by the elephant
                 let elephant_valves = nonzero_valves
                     .iter()
                     .cloned()
                     .filter(|v| !my_valves.contains(v))
                     .collect_vec();
+                // Get the release from my nodes
                 let max_mine =
                     max_total_released(&input.graph, input.start, 26, &my_valves, vec![], &dist);
+                // Get the release from the elephant's nodes
                 let max_elephant = max_total_released(
                     &input.graph,
                     input.start,
@@ -167,6 +192,7 @@ impl Day for Day16 {
                     vec![],
                     &dist,
                 );
+                // In case we found a new best combination, we save its value
                 if max_mine + max_elephant > max_value {
                     max_value = max_mine + max_elephant;
                 }
