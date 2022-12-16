@@ -113,38 +113,12 @@ mod tests {
     #[test]
     fn test_objective_function() {
         let mut graph = UnGraph::<usize, u8>::new_undirected();
-        let aa = graph.add_node(0);
         let bb = graph.add_node(13);
         let cc = graph.add_node(2);
         let dd = graph.add_node(20);
         let ee = graph.add_node(3);
-        let ff = graph.add_node(0);
-        let gg = graph.add_node(0);
         let hh = graph.add_node(22);
-        let ii = graph.add_node(0);
         let jj = graph.add_node(21);
-        graph.extend_with_edges([
-            (aa, dd),
-            (aa, ii),
-            (aa, bb),
-            (bb, cc),
-            (bb, aa),
-            (cc, dd),
-            (cc, bb),
-            (dd, cc),
-            (dd, aa),
-            (dd, ee),
-            (ee, ff),
-            (ee, dd),
-            (ff, ee),
-            (ff, gg),
-            (gg, ff),
-            (gg, hh),
-            (hh, gg),
-            (ii, aa),
-            (ii, jj),
-            (jj, ii),
-        ]);
         let actions = vec![
             Action::Move,
             Action::OpenValve(dd),
