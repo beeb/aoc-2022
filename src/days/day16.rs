@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use bitvec::prelude::*;
 use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
@@ -34,7 +35,7 @@ fn max_total_released(
     from: NodeIndex,
     remaining_time: isize,
     nonzero_valves: &Vec<NodeIndex>,
-    opened: Vec<NodeIndex>,
+    opened: BitArray<u64>,
     distances: &HashMap<(NodeIndex, NodeIndex), isize>,
 ) -> isize {
     // we want to find which of all the unvisited unopened valves will yield the highest release
@@ -44,16 +45,16 @@ fn max_total_released(
         return 0;
     }
     // we've opened all the valves, we can stop
-    if opened.len() == nonzero_valves.len() {
+    if opened.count_ones() == nonzero_valves.len() {
         return 0;
     }
     // iterate over unopened valves
-    for &next_valve in nonzero_valves.iter().filter(|v| !opened.contains(v)) {
+    for &next_valve in nonzero_valves.iter().filter(|&n| !opened[n.index()]) {
         let dist = distances[&(from, next_valve)]; // how long does it take to get there
         if remaining_time > dist {
             // we only proceed if the node can be reached within the remaining time (including opening)
-            let mut opened = opened.clone();
-            opened.push(next_valve); // record that we've visited this node
+            let mut opened = opened;
+            opened.set(next_valve.index(), true); // record that we've visited this node
 
             // what is the best release we can get by going to this node? (doesn't include this valve's release)
             let next_total_released = max_total_released(
@@ -89,7 +90,7 @@ impl Day for Day16 {
                     tag("Valve "),
                     alpha1,
                     tag(" has flow rate="),
-                    map(u64, |f| f as usize),
+                    map(u64, |i| i as usize),
                     tag("; tunnel"),
                     opt(char('s')),
                     tag(" lead"),
@@ -132,7 +133,7 @@ impl Day for Day16 {
 
     type Output1 = isize;
 
-    /// Part 1 took 62.4335ms
+    /// Part 1 took 42.9ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // Get a map of the shortest distance from any node to any other node in the graph
         let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
@@ -140,10 +141,9 @@ impl Day for Day16 {
         let nonzero_valves = input
             .graph
             .node_indices()
-            .filter(|n| {
+            .filter(|&n| {
                 // consider unopened valves with a non-zero flow
-                let &flow = input.graph.node_weight(*n).unwrap();
-                flow > 0
+                *input.graph.node_weight(n).unwrap() > 0
             })
             .collect_vec();
         // Get the maximum possible pressure release
@@ -152,24 +152,23 @@ impl Day for Day16 {
             input.start,
             30,
             &nonzero_valves,
-            vec![],
+            BitArray::ZERO,
             &dist,
         )
     }
 
     type Output2 = isize;
 
-    /// Part 2 took 11.5s
+    /// Part 2 took 7.084s
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut max_value = 0;
         let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
         let nonzero_valves = input
             .graph
             .node_indices()
-            .filter(|n| {
+            .filter(|&n| {
                 // consider unopened valves with a non-zero flow
-                let &flow = input.graph.node_weight(*n).unwrap();
-                flow > 0
+                *input.graph.node_weight(n).unwrap() > 0
             })
             .collect_vec();
         // We can distribute the nodes to visit unevenly (e.g. 1 for me, 14 for elephant) all the way until 7 and 8
@@ -182,16 +181,23 @@ impl Day for Day16 {
                     .cloned()
                     .filter(|v| !my_valves.contains(v))
                     .collect_vec();
+
                 // Get the release from my nodes
-                let max_mine =
-                    max_total_released(&input.graph, input.start, 26, &my_valves, vec![], &dist);
+                let max_mine = max_total_released(
+                    &input.graph,
+                    input.start,
+                    26,
+                    &my_valves,
+                    BitArray::ZERO,
+                    &dist,
+                );
                 // Get the release from the elephant's nodes
                 let max_elephant = max_total_released(
                     &input.graph,
                     input.start,
                     26,
                     &elephant_valves,
-                    vec![],
+                    BitArray::ZERO,
                     &dist,
                 );
                 // In case we found a new best combination, we save its value
