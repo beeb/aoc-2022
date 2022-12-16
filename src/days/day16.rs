@@ -136,9 +136,42 @@ impl Day for Day16 {
         )
     }
 
-    type Output2 = usize;
+    type Output2 = isize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut max_value = 0;
+        let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
+        let nonzero_valves = input
+            .graph
+            .node_indices()
+            .filter(|n| {
+                // consider unopened valves with a non-zero flow
+                let &flow = input.graph.node_weight(*n).unwrap();
+                flow > 0
+            })
+            .collect_vec();
+        for i in 1..=nonzero_valves.len() / 2 {
+            for my_valves in nonzero_valves.iter().cloned().combinations(i) {
+                let elephant_valves = nonzero_valves
+                    .iter()
+                    .cloned()
+                    .filter(|v| !my_valves.contains(v))
+                    .collect_vec();
+                let max_mine =
+                    max_total_released(&input.graph, input.start, 26, &my_valves, vec![], &dist);
+                let max_elephant = max_total_released(
+                    &input.graph,
+                    input.start,
+                    26,
+                    &elephant_valves,
+                    vec![],
+                    &dist,
+                );
+                if max_mine + max_elephant > max_value {
+                    max_value = max_mine + max_elephant;
+                }
+            }
+        }
+        max_value
     }
 }
