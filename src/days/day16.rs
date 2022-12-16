@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
 use nom::{
     bytes::complete::tag,
     character::complete::{alpha1, char, line_ending, u64},
@@ -8,7 +9,7 @@ use nom::{
     sequence::tuple,
     IResult,
 };
-use petgraph::prelude::*;
+use petgraph::{algo::floyd_warshall, prelude::*};
 
 use crate::days::Day;
 
@@ -16,30 +17,46 @@ use crate::days::Day;
 pub struct Data {
     pub graph: UnGraph<usize, u8>,
     pub valves: HashMap<String, NodeIndex>,
+    pub valves_by_index: HashMap<NodeIndex, String>,
     pub start: NodeIndex,
 }
 
-pub enum Action {
-    Move,
-    OpenValve(NodeIndex),
-}
-
-fn total_released_pressure(actions: &Vec<Action>, graph: &UnGraph<usize, u8>) -> usize {
-    let mut total = 0usize;
-    let mut open = HashMap::<NodeIndex, usize>::with_capacity(60);
-    for action in actions {
-        match action {
-            Action::Move => {
-                total += open.values().sum::<usize>();
-            }
-            Action::OpenValve(node) => {
-                total += open.values().sum::<usize>();
-                let &flow = graph.node_weight(*node).unwrap();
-                open.insert(*node, flow);
+fn max_total_released(
+    graph: &UnGraph<usize, u8>,
+    from: NodeIndex,
+    remaining_time: isize,
+    nonzero_valves: &Vec<NodeIndex>,
+    opened: Vec<NodeIndex>,
+    distances: &HashMap<(NodeIndex, NodeIndex), isize>,
+) -> isize {
+    let mut max_value = 0;
+    if remaining_time <= 0 {
+        return 0;
+    }
+    if opened.len() == nonzero_valves.len() {
+        return 0;
+    }
+    for &next_valve in nonzero_valves.iter().filter(|v| !opened.contains(v)) {
+        let dist = distances[&(from, next_valve)];
+        if remaining_time > dist {
+            let mut opened = opened.clone();
+            opened.push(next_valve);
+            let next_total_released = max_total_released(
+                graph,
+                next_valve,
+                remaining_time - dist - 1,
+                nonzero_valves,
+                opened,
+                distances,
+            );
+            let acc =
+                *graph.node_weight(next_valve).unwrap() as isize * (remaining_time - dist - 1);
+            if acc + next_total_released > max_value {
+                max_value = acc + next_total_released;
             }
         }
     }
-    total
+    max_value
 }
 
 pub struct Day16;
@@ -70,11 +87,13 @@ impl Day for Day16 {
         )(input)?;
         let mut graph = UnGraph::new_undirected();
         let mut valves_map = HashMap::new();
+        let mut valves_by_index = HashMap::new();
         let mut first_valve: Option<NodeIndex> = None;
-        for (i, valve) in valves.iter().enumerate() {
+        for valve in valves.iter() {
             let node = graph.add_node(valve.1);
             valves_map.insert(valve.0.to_string(), node);
-            if i == 0 {
+            valves_by_index.insert(node, valve.0.to_string());
+            if valve.0 == "AA" {
                 first_valve = Some(node);
             }
         }
@@ -88,71 +107,38 @@ impl Day for Day16 {
         let data = Data {
             graph,
             valves: valves_map,
+            valves_by_index,
             start: first_valve.unwrap(),
         };
         Ok((rest, data))
     }
 
-    type Output1 = usize;
+    type Output1 = isize;
 
-    fn part_1(_input: &Self::Input) -> Self::Output1 {
-        0
+    fn part_1(input: &Self::Input) -> Self::Output1 {
+        let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
+        let nonzero_valves = input
+            .graph
+            .node_indices()
+            .filter(|n| {
+                // consider unopened valves with a non-zero flow
+                let &flow = input.graph.node_weight(*n).unwrap();
+                flow > 0
+            })
+            .collect_vec();
+        max_total_released(
+            &input.graph,
+            input.start,
+            30,
+            &nonzero_valves,
+            vec![],
+            &dist,
+        )
     }
 
     type Output2 = usize;
 
     fn part_2(_input: &Self::Input) -> Self::Output2 {
         unimplemented!("part_2")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_objective_function() {
-        let mut graph = UnGraph::<usize, u8>::new_undirected();
-        let bb = graph.add_node(13);
-        let cc = graph.add_node(2);
-        let dd = graph.add_node(20);
-        let ee = graph.add_node(3);
-        let hh = graph.add_node(22);
-        let jj = graph.add_node(21);
-        let actions = vec![
-            Action::Move,
-            Action::OpenValve(dd),
-            Action::Move,
-            Action::Move,
-            Action::OpenValve(bb),
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::OpenValve(jj),
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::OpenValve(hh),
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::OpenValve(ee),
-            Action::Move,
-            Action::Move,
-            Action::OpenValve(cc),
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-            Action::Move,
-        ];
-        assert_eq!(actions.len(), 30);
-        let total_pressure = total_released_pressure(&actions, &graph);
-        assert_eq!(total_pressure, 1651);
     }
 }
