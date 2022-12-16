@@ -132,6 +132,7 @@ impl Day for Day16 {
 
     type Output1 = isize;
 
+    /// Part 1 took 62.4335ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // Get a map of the shortest distance from any node to any other node in the graph
         let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
@@ -158,6 +159,7 @@ impl Day for Day16 {
 
     type Output2 = isize;
 
+    /// Part 2 took 11.5s
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let mut max_value = 0;
         let dist = floyd_warshall(&input.graph, |_| 1).unwrap();
