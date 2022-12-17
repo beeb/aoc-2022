@@ -145,7 +145,7 @@ impl Day for Day17 {
 
     type Output1 = usize;
 
-    /// Part 1 took 0.175ms
+    /// Part 1 took 0.1092ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // we make an infinite iterator for the air pushing actions
         let mut push = input.iter().cycle();
@@ -193,6 +193,7 @@ impl Day for Day17 {
 
     type Output2 = usize;
 
+    /// Part 2 took 0.562ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // We want to be able to know where in the input sequence lies the current air push, hence enumerate()
         // before the cycle() (so the index also cycles)
