@@ -8,6 +8,7 @@ use nom::{
     sequence::tuple,
     IResult,
 };
+use rayon::prelude::*;
 
 use crate::days::Day;
 
@@ -157,18 +158,24 @@ impl Day for Day15 {
     /// Part 2 took 256.0502ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // scan all rows
-        for y in 0..=4_000_000 {
-            // get all ranges where no untracked beacons can be
-            let ranges = ranges_with_no_beacons(input, y);
-            // in case there are more than 1 ranges, it means there is an interval in-between where an untracked
-            // beacon could be. Since only 1 position for the untracked beacon is possible, it has to be one above
-            // the upper bound of the first range.
-            if ranges.len() > 1 {
-                let x = ranges[0].1 + 1;
-                // calculate the tuning frequency
-                return x * 4_000_000 + y;
-            }
-        }
-        panic!("could not find a suitable position");
+        let Some(Some(answer)) = (0..=4_000_000)
+            .into_par_iter()
+            .map(|y| {
+                // get all ranges where no untracked beacons can be
+                let ranges = ranges_with_no_beacons(input, y);
+                // in case there are more than 1 ranges, it means there is an interval in-between where an untracked
+                // beacon could be. Since only 1 position for the untracked beacon is possible, it has to be one above
+                // the upper bound of the first range.
+                if ranges.len() > 1 {
+                    let x = ranges[0].1 + 1;
+                    // calculate the tuning frequency
+                    return Some(x * 4_000_000 + y);
+                }
+                None
+            })
+            .find_any(|v| v.is_some()) else {
+                panic!("not found");
+            };
+        answer
     }
 }
