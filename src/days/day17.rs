@@ -178,8 +178,8 @@ impl Day for Day17 {
         let mut grid = [0b10000000_u8; 100_000];
         grid[0] = 0b11111111;
         let mut highest_z = 0_usize;
-        // keep a cache of the stack height and piece index for a given combination of current piece type, gust
-        // position, and state of the last few rows
+        // keep a cache of the stack height and piece index for a given combination of current piece type, air push
+        // index in the sequence, and state of the last few rows
         let mut cache = HashMap::<Identifier, (usize, usize)>::new();
         let mut i = 0;
         while i < 1_000_000_000_000_usize {
