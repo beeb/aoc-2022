@@ -125,17 +125,38 @@ impl Day for Day17 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        let push = input.iter().cycle();
+        let mut push = input.iter().cycle();
         // at index 0 is the grid floor
         let mut grid = [0b10000000u8; 10_000];
         grid[0] = 0b11111111;
-        let highest_z = 0usize;
+        let mut highest_z = 0usize;
         for i in 0..2022 {
             let kind = (i % 5) as u8;
             let mut piece = Piece::new(kind, highest_z + 4);
-            println!("{piece}\n");
+            loop {
+                match push.next() {
+                    Some(Push::Left) => {
+                        piece.move_left(&grid);
+                    }
+                    Some(Push::Right) => {
+                        piece.move_right(&grid);
+                    }
+                    None => {
+                        unreachable!("we cycle through the iterator indefinitely");
+                    }
+                }
+                if !piece.can_move_down(&grid) {
+                    break;
+                }
+                piece.move_down();
+            }
+            highest_z = piece.get_highest_z().max(highest_z);
+            // mutate grid
+            for (j, piece_row) in piece.data.into_iter().enumerate() {
+                grid[piece.z + j] |= piece_row;
+            }
         }
-        0
+        highest_z
     }
 
     type Output2 = usize;
