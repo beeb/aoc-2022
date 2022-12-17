@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use nom::{character::complete::anychar, combinator::map, multi::many1, IResult};
 
 use crate::days::Day;
@@ -26,6 +25,47 @@ impl Piece {
         };
         Self { data, z }
     }
+
+    fn move_left(&mut self, grid: [u8; 4]) -> &mut Self {
+        let can_move = grid.iter().enumerate().all(|(i, row)| {
+            let piece_row = self.data[i];
+            (piece_row << 1 & row).count_ones() == 0
+        });
+        if !can_move {
+            return self;
+        }
+        self.data.iter_mut().for_each(|r| {
+            *r <<= 1;
+        });
+        self
+    }
+
+    fn move_right(&mut self, grid: [u8; 4]) -> &mut Self {
+        let can_move = grid.iter().enumerate().all(|(i, row)| {
+            let piece_row = self.data[i];
+            if piece_row.trailing_ones() > 0 {
+                return false;
+            }
+            (piece_row >> 1 & row).count_ones() == 0
+        });
+        if !can_move {
+            return self;
+        }
+        self.data.iter_mut().for_each(|r| {
+            *r >>= 1;
+        });
+        self
+    }
+}
+
+impl std::fmt::Display for Piece {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{:#09b}\n{:#09b}\n{:#09b}\n{:#09b}",
+            self.data[0], self.data[1], self.data[2], self.data[3]
+        )
+    }
 }
 
 pub struct Day17;
@@ -44,7 +84,12 @@ impl Day for Day17 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let push = input.iter().cycle();
-
+        let grid = [0b10000000u8; 10_000];
+        let highest_z = 0usize;
+        for i in 0..2022 {
+            let kind = (i % 5) as u8;
+            let mut piece = Piece::new(kind, highest_z + 4);
+        }
         0
     }
 
