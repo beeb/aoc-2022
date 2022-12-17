@@ -174,7 +174,7 @@ impl Day for Day17 {
                         unreachable!("we cycle through the iterator indefinitely");
                     }
                 }
-                // part cannot move down, we move on to the next part
+                // part cannot move down, we can save current position into the grid (exit loop)
                 if !piece.can_move_down(&grid) {
                     break;
                 }
