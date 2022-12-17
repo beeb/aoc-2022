@@ -155,7 +155,7 @@ impl Day for Day15 {
 
     type Output2 = isize;
 
-    /// Part 2 took 256.0502ms
+    /// Part 2 took 12.1516ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // scan all rows
         let Some(Some(answer)) = (0..=4_000_000)
