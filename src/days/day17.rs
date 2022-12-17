@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use itertools::{
     FoldWhile::{Continue, Done},
     Itertools,
@@ -34,7 +36,7 @@ impl Piece {
     }
 
     /// the grid slice we consider is aligned with the piece data
-    fn move_left(&mut self, grid: &[u8; 10_000]) -> &mut Self {
+    fn move_left(&mut self, grid: &[u8]) -> &mut Self {
         let grid = &grid[self.z..self.z + 4];
         let can_move = grid.iter().enumerate().all(|(i, row)| {
             let piece_row = self.data[i];
@@ -50,7 +52,7 @@ impl Piece {
     }
 
     /// the grid slice we get is aligned with the piece data
-    fn move_right(&mut self, grid: &[u8; 10_000]) -> &mut Self {
+    fn move_right(&mut self, grid: &[u8]) -> &mut Self {
         let grid = &grid[self.z..self.z + 4];
         let can_move = grid.iter().enumerate().all(|(i, row)| {
             let piece_row = self.data[i];
@@ -71,7 +73,7 @@ impl Piece {
     /// the grid slice we consider comprises the one below the piece's z, and the bottom row of our piece
     /// this should be enough to check for collisions, since pieces are increasing in section only on their lowest
     /// two rows
-    fn can_move_down(&self, grid: &[u8; 10_000]) -> bool {
+    fn can_move_down(&self, grid: &[u8]) -> bool {
         let grid = &grid[self.z - 1..=self.z];
         grid.iter().enumerate().all(|(i, row)| {
             let piece_row = self.data[i]; // simulate if we moved down
@@ -110,6 +112,13 @@ impl std::fmt::Display for Piece {
     }
 }
 
+#[derive(Hash, PartialEq, Eq)]
+struct Identifier {
+    piece_kind: u8,
+    push_idx: usize,
+    grid: [u8; 16],
+}
+
 pub struct Day17;
 
 impl Day for Day17 {
@@ -124,6 +133,7 @@ impl Day for Day17 {
 
     type Output1 = usize;
 
+    /// Part 1 took 0.175ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut push = input.iter().cycle();
         // at index 0 is the grid floor
@@ -161,7 +171,64 @@ impl Day for Day17 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut push = input.iter().enumerate().cycle();
+        let mut skipped = 0;
+        // at index 0 is the grid floor
+        let mut grid = [0b10000000_u8; 100_000];
+        grid[0] = 0b11111111;
+        let mut highest_z = 0_usize;
+        // keep a cache of the stack height and piece index for a given combination of current piece type, gust
+        // position, and state of the last few rows
+        let mut cache = HashMap::<Identifier, (usize, usize)>::new();
+        let mut i = 0;
+        while i < 1_000_000_000_000_usize {
+            let kind = (i % 5) as u8;
+            let mut piece = Piece::new(kind, highest_z + 4);
+            let mut last_push_idx;
+            loop {
+                let (push_idx, push_type) = push.next().unwrap();
+                last_push_idx = push_idx;
+                match push_type {
+                    Push::Left => {
+                        piece.move_left(&grid);
+                    }
+                    Push::Right => {
+                        piece.move_right(&grid);
+                    }
+                }
+                if !piece.can_move_down(&grid) {
+                    break;
+                }
+                piece.move_down();
+            }
+            highest_z = piece.get_highest_z().max(highest_z);
+            // mutate grid
+            for (j, piece_row) in piece.data.into_iter().enumerate() {
+                grid[piece.z + j] |= piece_row;
+            }
+            if highest_z > 15 && skipped == 0 {
+                let identifier = Identifier {
+                    piece_kind: kind,
+                    push_idx: last_push_idx,
+                    grid: grid[highest_z - 15..=highest_z]
+                        .try_into()
+                        .expect("slice with incorrect length"),
+                };
+                if let Some((prev_height, prev_piece_idx)) =
+                    cache.insert(identifier, (highest_z, i))
+                {
+                    let height_diff = highest_z - prev_height;
+                    let piece_diff = i - prev_piece_idx;
+                    let skip_repeats = (1_000_000_000_000_usize - i) / piece_diff;
+                    let skip_pieces = skip_repeats * piece_diff;
+                    let skip_height = skip_repeats * height_diff;
+                    i += skip_pieces;
+                    skipped = skip_height;
+                }
+            }
+            i += 1;
+        }
+        highest_z + skipped
     }
 }
