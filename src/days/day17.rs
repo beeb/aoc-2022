@@ -153,7 +153,7 @@ impl Day for Day17 {
         let mut grid = [0b1000_0000_u8; 10_000];
         // at index 0 is the grid floor
         grid[0] = 0b1111_1111;
-        let mut highest_z = 0usize; // keep track of the stack height
+        let mut highest_z = 0_usize; // keep track of the stack height
 
         // consider 2022 pieces
         for i in 0..2022 {
@@ -201,8 +201,8 @@ impl Day for Day17 {
         let mut skipped = 0; // this variable will keep track of how much height we fast-forwarded
 
         // Init our grid like last time, but a bit taller so we have time to notice a repeating pattern
-        let mut grid = [0b10000000_u8; 100_000];
-        grid[0] = 0b11111111;
+        let mut grid = [0b1000_0000_u8; 100_000];
+        grid[0] = 0b1111_1111;
         let mut highest_z = 0_usize;
         // Keep a cache of the (stack height, piece index) for a given combination of:
         //  - current piece type
