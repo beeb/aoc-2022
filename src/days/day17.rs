@@ -116,7 +116,7 @@ impl std::fmt::Display for Piece {
 struct Identifier {
     piece_kind: u8,
     push_idx: usize,
-    grid: [u8; 16],
+    grid: [u8; 64],
 }
 
 pub struct Day17;
@@ -207,11 +207,11 @@ impl Day for Day17 {
             for (j, piece_row) in piece.data.into_iter().enumerate() {
                 grid[piece.z + j] |= piece_row;
             }
-            if highest_z > 15 && skipped == 0 {
+            if highest_z > 64 && skipped == 0 {
                 let identifier = Identifier {
                     piece_kind: kind,
                     push_idx: last_push_idx,
-                    grid: grid[highest_z - 15..=highest_z]
+                    grid: grid[highest_z - 63..=highest_z]
                         .try_into()
                         .expect("slice with incorrect length"),
                 };
