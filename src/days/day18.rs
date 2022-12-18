@@ -67,7 +67,79 @@ impl Day for Day18 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut vol = [[[false; 20]; 20]; 20];
+        let mut flood = [[[false; 20]; 20]; 20];
+        flood[0][0][0] = true; // seed the flooding algorithm
+        for Voxel { x, y, z } in input.iter() {
+            vol[*x][*y][*z] = true;
+        }
+        let mut prev_visible = 0;
+        let mut visible = usize::MAX;
+        loop {
+            // flood
+            for x in 0..20 {
+                for y in 0..20 {
+                    for z in 0..20 {
+                        if vol[x][y][z] {
+                            // if we have a solid here, it's obviously not part of the ouside
+                            continue;
+                        }
+                        // check if any neighbor was already "flooded" (and is not solid)
+                        if x < 19 && flood[x + 1][y][z] && !vol[x + 1][y][z] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                        if x > 0 && flood[x - 1][y][z] && !vol[x - 1][y][z] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                        if y < 19 && flood[x][y + 1][z] && !vol[x][y + 1][z] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                        if y > 0 && flood[x][y - 1][z] && !vol[x][y - 1][z] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                        if z < 19 && flood[x][y][z + 1] && !vol[x][y][z + 1] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                        if z > 0 && flood[x][y][z - 1] && !vol[x][y][z - 1] {
+                            flood[x][y][z] = true;
+                            continue;
+                        }
+                    }
+                }
+            }
+            visible = 0;
+            for Voxel { x, y, z } in input.iter() {
+                if *x == 19 || flood[*x + 1][*y][*z] {
+                    visible += 1;
+                }
+                if *x == 0 || flood[*x - 1][*y][*z] {
+                    visible += 1;
+                }
+                if *y == 19 || flood[*x][*y + 1][*z] {
+                    visible += 1;
+                }
+                if *y == 0 || flood[*x][*y - 1][*z] {
+                    visible += 1;
+                }
+                if *z == 19 || flood[*x][*y][*z + 1] {
+                    visible += 1;
+                }
+                if *z == 0 || flood[*x][*y][*z - 1] {
+                    visible += 1;
+                }
+            }
+            if visible > prev_visible {
+                prev_visible = visible;
+            } else {
+                break;
+            }
+        }
+        visible
     }
 }
