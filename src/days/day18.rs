@@ -103,21 +103,23 @@ impl Day for Day18 {
             for dir in DIRS {
                 // check all neighbours
                 let n = (voxel.0 + dir.0, voxel.1 + dir.1, voxel.2 + dir.2);
-                // we only consider the ones that are within bounds
-                if !in_bounds(n) {
+
+                // we only consider the ones that are within bounds and not visited before
+                if seen.contains(&n) || !in_bounds(n) {
                     continue;
                 }
+
                 // if the neighbouring voxel is lava, we count its face.
-                // we will only count it once since we add the currently visited voxel to the "seen" list
+                // we will only count it once since we added the currently visited voxel to the "seen" list
                 // other faces of that lava voxel will be counted at another time when it's reached from other
                 // directions
                 if vol[n.0 as usize][n.1 as usize][n.2 as usize] {
                     visible += 1;
-                } else if !seen.contains(&n) {
-                    // in case this neighbour was first visited now, let's flood it and stack it for later visit
-                    stack.push_back(n);
-                    seen.insert(n);
+                    continue;
                 }
+                // in case this neighbour was first visited now, let's flood it and stack it for later visit
+                stack.push_back(n);
+                seen.insert(n);
             }
         }
         visible
