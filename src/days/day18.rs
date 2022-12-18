@@ -19,7 +19,7 @@ const DIRS: [(i8, i8, i8); 6] = [
     (0, 0, -1),
 ];
 
-const GRID_SIZE: usize = 20;
+const GRID_SIZE: usize = 22;
 
 #[derive(Debug)]
 pub struct Voxel {
@@ -48,9 +48,9 @@ impl Day for Day18 {
             map(
                 tuple((u8, char(','), u8, char(','), u8)),
                 |(x, _, y, _, z)| Voxel {
-                    x: x as usize,
-                    y: y as usize,
-                    z: z as usize,
+                    x: (x + 1) as usize, // offset by one to make sure we have margin around the object
+                    y: (y + 1) as usize,
+                    z: (z + 1) as usize,
                 },
             ),
         )(input)
@@ -71,10 +71,6 @@ impl Day for Day18 {
         for Voxel { x, y, z } in input.iter() {
             for dir in DIRS {
                 let n = (*x as i8 + dir.0, *y as i8 + dir.1, *z as i8 + dir.2);
-                if !in_bounds(n) {
-                    open_sides += 1;
-                    continue;
-                }
                 if !vol[n.0 as usize][n.1 as usize][n.2 as usize] {
                     open_sides += 1;
                 }
@@ -88,14 +84,12 @@ impl Day for Day18 {
     /// Part 2 took 0.1277ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // Volume of solidified lava
-        let mut vol = [[[false; 20]; 20]; 20];
-        let mut flood = [[[false; 20]; 20]; 20];
+        let mut vol = [[[false; GRID_SIZE]; GRID_SIZE]; GRID_SIZE];
         // Populate the array from the input data
         for Voxel { x, y, z } in input.iter() {
             vol[*x][*y][*z] = true;
         }
         let mut visible = 0;
-        flood[0][0][0] = true;
         let mut seen = HashSet::<(i8, i8, i8)>::new();
         seen.insert((0, 0, 0));
         let mut stack = VecDeque::<(i8, i8, i8)>::new();
@@ -109,43 +103,11 @@ impl Day for Day18 {
                 if vol[n.0 as usize][n.1 as usize][n.2 as usize] {
                     visible += 1;
                 } else if !seen.contains(&n) {
-                    flood[n.0 as usize][n.1 as usize][n.2 as usize] = true;
                     stack.push_back(n);
                     seen.insert(n);
                 }
             }
         }
-        /* for (y, sl) in flood[8].iter().enumerate() {
-            for &fl in sl {
-                print!("{}", fl as u8);
-            }
-            print!(" ");
-            for v in vol[8][y] {
-                print!("{}", v as u8);
-            }
-            println!();
-        }  *//*
-          visible = 0;
-          for Voxel { x, y, z } in input.iter() {
-              if *x == 19 || flood[*x + 1][*y][*z] {
-                  visible += 1;
-              }
-              if *x == 0 || flood[*x - 1][*y][*z] {
-                  visible += 1;
-              }
-              if *y == 19 || flood[*x][*y + 1][*z] {
-                  visible += 1;
-              }
-              if *y == 0 || flood[*x][*y - 1][*z] {
-                  visible += 1;
-              }
-              if *z == 19 || flood[*x][*y][*z + 1] {
-                  visible += 1;
-              }
-              if *z == 0 || flood[*x][*y][*z - 1] {
-                  visible += 1;
-              }
-          } */
         visible
     }
 }
