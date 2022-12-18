@@ -75,14 +75,15 @@ impl Day for Day18 {
             vol[*x][*y][*z] = true;
         }
         let mut prev_visible = 0;
-        let mut visible = usize::MAX;
+        let mut visible;
         loop {
             // flood
             for x in 0..20 {
                 for y in 0..20 {
                     for z in 0..20 {
-                        if vol[x][y][z] {
+                        if vol[x][y][z] || flood[x][y][z] {
                             // if we have a solid here, it's obviously not part of the ouside
+                            // if we already are flooded, we skip too
                             continue;
                         }
                         // check if any neighbor was already "flooded" (and is not solid)
