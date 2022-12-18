@@ -10,13 +10,6 @@ use nom::{
 
 use crate::days::Day;
 
-#[derive(Debug)]
-pub struct Voxel {
-    pub x: usize,
-    pub y: usize,
-    pub z: usize,
-}
-
 const DIRS: [(i8, i8, i8); 6] = [
     (1, 0, 0),
     (-1, 0, 0),
@@ -26,8 +19,22 @@ const DIRS: [(i8, i8, i8); 6] = [
     (0, 0, -1),
 ];
 
+const GRID_SIZE: usize = 20;
+
+#[derive(Debug)]
+pub struct Voxel {
+    pub x: usize,
+    pub y: usize,
+    pub z: usize,
+}
+
 fn in_bounds(c: (i8, i8, i8)) -> bool {
-    c.0 >= 0 && c.0 < 20 && c.1 >= 0 && c.1 < 20 && c.2 >= 0 && c.2 < 20
+    c.0 >= 0
+        && c.0 < GRID_SIZE as i8
+        && c.1 >= 0
+        && c.1 < GRID_SIZE as i8
+        && c.2 >= 0
+        && c.2 < GRID_SIZE as i8
 }
 
 pub struct Day18;
@@ -54,7 +61,7 @@ impl Day for Day18 {
     /// Part 1 took 0.0259ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // Let's save the voxels into a 3D array
-        let mut vol = [[[false; 20]; 20]; 20];
+        let mut vol = [[[false; GRID_SIZE]; GRID_SIZE]; GRID_SIZE];
         let mut open_sides = 0;
         // Populate the array from the input data
         for Voxel { x, y, z } in input.iter() {
@@ -62,23 +69,15 @@ impl Day for Day18 {
         }
         // Let's check the open faces for each voxel (top, bottom, left, right, front, back)
         for Voxel { x, y, z } in input.iter() {
-            if *x == 19 || !vol[*x + 1][*y][*z] {
-                open_sides += 1;
-            }
-            if *x == 0 || !vol[*x - 1][*y][*z] {
-                open_sides += 1;
-            }
-            if *y == 19 || !vol[*x][*y + 1][*z] {
-                open_sides += 1;
-            }
-            if *y == 0 || !vol[*x][*y - 1][*z] {
-                open_sides += 1;
-            }
-            if *z == 19 || !vol[*x][*y][*z + 1] {
-                open_sides += 1;
-            }
-            if *z == 0 || !vol[*x][*y][*z - 1] {
-                open_sides += 1;
+            for dir in DIRS {
+                let n = (*x as i8 + dir.0, *y as i8 + dir.1, *z as i8 + dir.2);
+                if !in_bounds(n) {
+                    open_sides += 1;
+                    continue;
+                }
+                if !vol[n.0 as usize][n.1 as usize][n.2 as usize] {
+                    open_sides += 1;
+                }
             }
         }
         open_sides
@@ -116,7 +115,7 @@ impl Day for Day18 {
                 }
             }
         }
-        for (y, sl) in flood[8].iter().enumerate() {
+        /* for (y, sl) in flood[8].iter().enumerate() {
             for &fl in sl {
                 print!("{}", fl as u8);
             }
@@ -125,7 +124,28 @@ impl Day for Day18 {
                 print!("{}", v as u8);
             }
             println!();
-        }
+        }  *//*
+          visible = 0;
+          for Voxel { x, y, z } in input.iter() {
+              if *x == 19 || flood[*x + 1][*y][*z] {
+                  visible += 1;
+              }
+              if *x == 0 || flood[*x - 1][*y][*z] {
+                  visible += 1;
+              }
+              if *y == 19 || flood[*x][*y + 1][*z] {
+                  visible += 1;
+              }
+              if *y == 0 || flood[*x][*y - 1][*z] {
+                  visible += 1;
+              }
+              if *z == 19 || flood[*x][*y][*z + 1] {
+                  visible += 1;
+              }
+              if *z == 0 || flood[*x][*y][*z - 1] {
+                  visible += 1;
+              }
+          } */
         visible
     }
 }
