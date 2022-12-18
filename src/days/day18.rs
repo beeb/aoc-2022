@@ -70,6 +70,7 @@ impl Day for Day18 {
         // Let's check the open faces for each voxel (top, bottom, left, right, front, back)
         for Voxel { x, y, z } in input.iter() {
             for dir in DIRS {
+                // this will never be out of bounds because we added 1 voxel of margin in all directions
                 let n = (*x as i8 + dir.0, *y as i8 + dir.1, *z as i8 + dir.2);
                 if !vol[n.0 as usize][n.1 as usize][n.2 as usize] {
                     open_sides += 1;
@@ -81,28 +82,39 @@ impl Day for Day18 {
 
     type Output2 = usize;
 
-    /// Part 2 took 0.1277ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
-        // Volume of solidified lava
+        // Volume of droplet
         let mut vol = [[[false; GRID_SIZE]; GRID_SIZE]; GRID_SIZE];
         // Populate the array from the input data
         for Voxel { x, y, z } in input.iter() {
             vol[*x][*y][*z] = true;
         }
+        // keeping track of sides visible from the outside
         let mut visible = 0;
+        // memoization to keep track of flooded voxels
         let mut seen = HashSet::<(i8, i8, i8)>::new();
+        // we seed the flooding at 0, 0, 0
         seen.insert((0, 0, 0));
+        // stack for BFS
         let mut stack = VecDeque::<(i8, i8, i8)>::new();
         stack.push_back((0, 0, 0));
+        // let's flood it
         while let Some(voxel) = stack.pop_front() {
             for dir in DIRS {
+                // check all neighbours
                 let n = (voxel.0 + dir.0, voxel.1 + dir.1, voxel.2 + dir.2);
+                // we only consider the ones that are within bounds
                 if !in_bounds(n) {
                     continue;
                 }
+                // if the neighbouring voxel is lava, we count its face.
+                // we will only count it once since we add the currently visited voxel to the "seen" list
+                // other faces of that lava voxel will be counted at another time when it's reached from other
+                // directions
                 if vol[n.0 as usize][n.1 as usize][n.2 as usize] {
                     visible += 1;
                 } else if !seen.contains(&n) {
+                    // in case this neighbour was first visited now, let's flood it and stack it for later visit
                     stack.push_back(n);
                     seen.insert(n);
                 }
