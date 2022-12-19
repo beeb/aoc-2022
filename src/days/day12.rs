@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    collections::{BinaryHeap, HashMap, VecDeque},
-};
+use std::collections::{HashMap, VecDeque};
 
 use colored::Colorize;
 use itertools::Itertools;
@@ -27,74 +24,39 @@ impl Point {
     }
 }
 
-/// An open position, with its coordinates as a `Point` and the f-score or expected cost to reach the end position.
-#[derive(Debug)]
-pub struct OpenPos {
-    point: Point,
-    cost: usize,
-}
-
-impl OpenPos {
+impl Point {
     /// Check which of the 2-4 neighbors are valid moves and return them in a Vec.
     pub fn valid_neighbors(&self, grid: &Vec<Vec<usize>>) -> Vec<Point> {
         let mut n = Vec::<Point>::with_capacity(4);
         // top
-        if self.point.x > 0
-            && grid[self.point.x - 1][self.point.y] <= grid[self.point.x][self.point.y] + 1
-        {
+        if self.x > 0 && grid[self.x - 1][self.y] <= grid[self.x][self.y] + 1 {
             n.push(Point {
-                x: self.point.x - 1,
-                y: self.point.y,
+                x: self.x - 1,
+                y: self.y,
             })
         }
         // right
-        if self.point.y < grid[0].len() - 1
-            && grid[self.point.x][self.point.y + 1] <= grid[self.point.x][self.point.y] + 1
-        {
+        if self.y < grid[0].len() - 1 && grid[self.x][self.y + 1] <= grid[self.x][self.y] + 1 {
             n.push(Point {
-                x: self.point.x,
-                y: self.point.y + 1,
+                x: self.x,
+                y: self.y + 1,
             })
         }
         // bottom
-        if self.point.x < grid.len() - 1
-            && grid[self.point.x + 1][self.point.y] <= grid[self.point.x][self.point.y] + 1
-        {
+        if self.x < grid.len() - 1 && grid[self.x + 1][self.y] <= grid[self.x][self.y] + 1 {
             n.push(Point {
-                x: self.point.x + 1,
-                y: self.point.y,
+                x: self.x + 1,
+                y: self.y,
             })
         }
         // left
-        if self.point.y > 0
-            && grid[self.point.x][self.point.y - 1] <= grid[self.point.x][self.point.y] + 1
-        {
+        if self.y > 0 && grid[self.x][self.y - 1] <= grid[self.x][self.y] + 1 {
             n.push(Point {
-                x: self.point.x,
-                y: self.point.y - 1,
+                x: self.x,
+                y: self.y - 1,
             })
         }
         n
-    }
-}
-
-impl Eq for OpenPos {}
-
-impl PartialEq for OpenPos {
-    fn eq(&self, other: &Self) -> bool {
-        self.cost == other.cost
-    }
-}
-
-impl PartialOrd for OpenPos {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        other.cost.partial_cmp(&self.cost)
-    }
-}
-
-impl Ord for OpenPos {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
     }
 }
 
@@ -172,14 +134,14 @@ fn print_path(path: &VecDeque<Point>, grid: &[Vec<usize>]) {
 fn a_star(grid: &Vec<Vec<usize>>, start: Point, end: &Point, print: bool) -> Option<usize> {
     // the open_set is the list of all candidates for the next move.
     // this is a min heap (sorting on the cost attribute)
-    let mut open_set = BinaryHeap::<OpenPos>::new();
+    let mut open_set = Vec::<Point>::new();
     // the starting point gets added as the only option for the first move
-    open_set.push(OpenPos {
-        point: start.clone(),
-        cost: start.distance_to(end), // f-score, which is the expected cost to reach the End node
-    });
+    open_set.push(start.clone());
     // this map stores the path dependencies so we can reconstruct it later
     let mut came_from = HashMap::<Point, Point>::new();
+    // f-score, which is the expected cost to reach the End node
+    let mut f_score = HashMap::<Point, usize>::new();
+    f_score.insert(start.clone(), start.distance_to(end));
     // this map stores the g-score (or the travelled distance) for each visited Point
     let mut g_score = HashMap::<Point, usize>::new();
     // initialize with the starting point
@@ -188,8 +150,8 @@ fn a_star(grid: &Vec<Vec<usize>>, start: Point, end: &Point, print: bool) -> Opt
     // check all the candidates for a move, starting with the lowest-cost one
     while let Some(current) = open_set.pop() {
         // in case we reached the end, we can end the algo and reconstruct the path
-        if current.point == *end {
-            let path = path(came_from, current.point);
+        if current == *end {
+            let path = path(came_from, current);
             if print {
                 print_path(&path, grid);
             }
@@ -199,25 +161,23 @@ fn a_star(grid: &Vec<Vec<usize>>, start: Point, end: &Point, print: bool) -> Opt
         // for each elligible neighbor (with at most 1 more height as current node)
         for n in current.valid_neighbors(grid).iter() {
             // the g-score (distance) for this node would be one more than the current node since we travel 1 more edge
-            let tentative_gscore = g_score[&current.point] + 1;
+            let tentative_gscore = g_score[&current] + 1;
             // we compare the g-score (distance) coming from "current" with any potential previous g-score
             // for this neighbor (from other paths). If the neighbor is not in the set, we use a large value so that the
             // inequality always is `true`
             if tentative_gscore < *g_score.get(n).unwrap_or(&usize::MAX) {
                 // store from which node we came (might get overwritten later)
-                came_from.insert(n.clone(), current.point.clone());
+                came_from.insert(n.clone(), current.clone());
                 // save the g-score for this neighbor
                 g_score.insert(n.clone(), tentative_gscore);
                 // save this neighbor as a candidate, calculating its f-score by adding the expected cost until we
                 // reach the End node to the already travelled distance.
-                let pos = OpenPos {
-                    point: n.clone(),
-                    cost: tentative_gscore + n.distance_to(end), // f-score
-                };
+                f_score.insert(n.clone(), tentative_gscore + n.distance_to(end));
                 // since we want to replace this point in the min-heap if it exists, we need to remove it first
-                open_set.retain(|p| p.point != pos.point);
+                open_set.retain(|p| p != n);
                 // add the candidate to the min-heap
-                open_set.push(pos);
+                open_set.push(n.clone());
+                open_set.sort_by(|a, b| f_score[b].cmp(&f_score[a]));
             }
             // if the above inequality was false, then the neighbor was already saved as an open position with a better
             // g-score
