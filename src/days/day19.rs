@@ -6,21 +6,22 @@ use nom::{
     sequence::tuple,
     IResult,
 };
+use rayon::prelude::*;
 
 use crate::days::Day;
 
 #[derive(Debug)]
 pub struct Blueprint {
     pub id: u64,
-    pub ore_cost: u64,
-    pub clay_cost: u64,
+    pub ore_cost_ore: u64,
+    pub clay_cost_ore: u64,
     pub obs_cost_ore: u64,
     pub obs_cost_clay: u64,
     pub geode_cost_ore: u64,
     pub geode_cost_obs: u64,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 struct StackItem {
     ore_robots: u64,
     clay_robots: u64,
@@ -41,44 +42,53 @@ fn geodes_opened(bp: &Blueprint) -> u64 {
         ..Default::default()
     });
     let mut geodes_opened = 0;
+    let mut best_sol = StackItem {
+        ore_robots: 1,
+        time_remaining: 24,
+        ..Default::default()
+    };
     while let Some(c) = stack.pop() {
         if c.time_remaining == 0 {
             if c.geodes > geodes_opened {
                 geodes_opened = c.geodes;
+                best_sol = c.clone();
             }
             continue;
         }
-
-        // check if we can build an ore robot
-        if c.ore >= bp.ore_cost {
+        // check if we can build an ore robot and if we need it
+        let max_ore_cost = [bp.clay_cost_ore, bp.obs_cost_ore, bp.geode_cost_ore]
+            .into_iter()
+            .max()
+            .unwrap();
+        if c.ore >= bp.ore_cost_ore && c.ore < max_ore_cost + bp.ore_cost_ore {
             stack.push(StackItem {
                 ore_robots: c.ore_robots + 1,
                 clay_robots: c.clay_robots,
                 obs_robots: c.obs_robots,
                 geode_robots: c.geode_robots,
-                ore: c.ore - bp.ore_cost + c.ore_robots,
+                ore: c.ore - bp.ore_cost_ore + c.ore_robots,
                 clay: c.clay + c.clay_robots,
                 obs: c.obs + c.obs_robots,
                 geodes: c.geodes + c.geode_robots,
                 time_remaining: c.time_remaining - 1,
             });
         }
-        // check if we can build a clay robot
-        if c.ore >= bp.clay_cost {
+        // check if we can build a clay robot and if we need it
+        if c.ore >= bp.clay_cost_ore && c.clay < bp.obs_cost_clay {
             stack.push(StackItem {
                 ore_robots: c.ore_robots,
                 clay_robots: c.clay_robots + 1,
                 obs_robots: c.obs_robots,
                 geode_robots: c.geode_robots,
-                ore: c.ore - bp.clay_cost + c.ore_robots,
+                ore: c.ore - bp.clay_cost_ore + c.ore_robots,
                 clay: c.clay + c.clay_robots,
                 obs: c.obs + c.obs_robots,
                 geodes: c.geodes + c.geode_robots,
                 time_remaining: c.time_remaining - 1,
             });
         }
-        // check if we can build a obsidian robot
-        if c.ore >= bp.obs_cost_ore && c.clay >= bp.obs_cost_clay {
+        // check if we can build an obsidian robot and if we need it
+        if c.ore >= bp.obs_cost_ore && c.clay >= bp.obs_cost_clay && c.obs < bp.geode_cost_obs {
             stack.push(StackItem {
                 ore_robots: c.ore_robots,
                 clay_robots: c.clay_robots,
@@ -118,7 +128,12 @@ fn geodes_opened(bp: &Blueprint) -> u64 {
             time_remaining: c.time_remaining - 1,
         });
     }
+    println!("{geodes_opened} {best_sol:?}");
     geodes_opened
+}
+
+fn blueprint_quality(bp: &Blueprint) -> u64 {
+    bp.id * geodes_opened(bp)
 }
 
 pub struct Day19;
@@ -133,7 +148,7 @@ impl Day for Day19 {
     type Output1 = u64;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        geodes_opened(&input[0])
+        input.par_iter().map(blueprint_quality).sum()
     }
 
     type Output2 = u64;
@@ -180,8 +195,8 @@ fn parse_blueprint(input: &str) -> IResult<&str, Blueprint> {
             _,
         )| Blueprint {
             id,
-            ore_cost,
-            clay_cost,
+            ore_cost_ore: ore_cost,
+            clay_cost_ore: clay_cost,
             obs_cost_ore,
             obs_cost_clay,
             geode_cost_ore,
