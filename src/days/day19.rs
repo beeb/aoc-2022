@@ -36,6 +36,10 @@ struct StackItem {
     time_remaining: u64,
 }
 
+fn theoretical_max(time_remaining: u64) -> u64 {
+    (time_remaining * (time_remaining + 1)) / 2
+}
+
 fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
     let mut cache = HashSet::<StackItem>::new();
     let mut stack = Vec::<StackItem>::with_capacity(100);
@@ -63,6 +67,13 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
             continue;
         }
 
+        if c.geodes + theoretical_max(c.time_remaining) + c.geode_robots * c.time_remaining
+            < geodes_opened
+        {
+            // We cannot achieve a better result from this state even if we could build a robot in every step
+            continue;
+        }
+
         // check if we can build a geode robot (we always need more)
         if c.ore >= bp.geode_cost_ore && c.obs >= bp.geode_cost_obs {
             let next = StackItem {
@@ -83,10 +94,7 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
         }
 
         // check if we can build an obsidian robot
-        if c.ore >= bp.obs_cost_ore
-            && c.clay >= bp.obs_cost_clay
-            && c.obs_robots < bp.geode_cost_obs
-        {
+        if c.ore >= bp.obs_cost_ore && c.clay >= bp.obs_cost_clay {
             let next = StackItem {
                 ore_robots: c.ore_robots,
                 clay_robots: c.clay_robots,
@@ -105,7 +113,7 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
         }
 
         // check if we can build a clay robot
-        if c.ore >= bp.clay_cost_ore && c.clay_robots < bp.obs_cost_clay {
+        if c.ore >= bp.clay_cost_ore {
             let next = StackItem {
                 ore_robots: c.ore_robots,
                 clay_robots: c.clay_robots + 1,
@@ -124,7 +132,7 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
         }
 
         // check if we can build an ore robot and if we need it
-        // if we have enough robots to produce max_ore_cost in the next round, no need for more robots
+        // if we have enough robots to produce max_ore_cost in each round, no need for more robots
         if c.ore >= bp.ore_cost_ore && c.ore_robots < max_ore_cost {
             let next = StackItem {
                 ore_robots: c.ore_robots + 1,
@@ -186,8 +194,8 @@ impl Day for Day19 {
 
     fn part_2(input: &Self::Input) -> Self::Output2 {
         input
-            .iter()
-            .take(1)
+            .par_iter()
+            .take(3)
             .map(|bp| geodes_opened(bp, 32))
             .product()
     }
