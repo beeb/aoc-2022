@@ -36,18 +36,23 @@ struct StackItem {
     time_remaining: u64,
 }
 
+// if we build one robot per minute until the end, and each produces 1 unit per minute,
+// how much resources will they produce?
 fn theoretical_max(time_remaining: u64) -> u64 {
     (time_remaining * (time_remaining + 1)) / 2
 }
 
+// Depth-first search on the solution space, pruning some branches that don't make sense
 fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
-    let mut cache = HashSet::<StackItem>::new();
+    let mut cache = HashSet::<StackItem>::new(); // avoid visiting the same state twice
     let mut stack = Vec::<StackItem>::with_capacity(100);
+    // initial state, we hav only 1 ore robot and x minutes left
     stack.push(StackItem {
         ore_robots: 1,
         time_remaining: time,
         ..Default::default()
     });
+    // record the maximum geodes opened after x minutes
     let mut geodes_opened = 0;
     // how much ore is required to be able to build any robot
     let max_ore_cost = [
@@ -60,6 +65,7 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
     .max()
     .unwrap();
     while let Some(c) = stack.pop() {
+        // in case we're out of time, let's check how many geodes we got and record if new max
         if c.time_remaining == 0 {
             if c.geodes > geodes_opened {
                 geodes_opened = c.geodes;
@@ -67,6 +73,8 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
             continue;
         }
 
+        // in the theoretical case where we could produce 1 geode robot per minute until the end,
+        // we should at least aim to be able to beat the record
         if c.geodes + theoretical_max(c.time_remaining) + c.geode_robots * c.time_remaining
             < geodes_opened
         {
@@ -151,7 +159,7 @@ fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
             }
         }
 
-        // we can always wait
+        // we can always wait to gather more resources
         let next = StackItem {
             ore_robots: c.ore_robots,
             clay_robots: c.clay_robots,
