@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use nom::{
     bytes::complete::tag,
     character::complete::{line_ending, u64},
@@ -21,7 +23,7 @@ pub struct Blueprint {
     pub geode_cost_obs: u64,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, Hash, PartialEq, Eq)]
 struct StackItem {
     ore_robots: u64,
     clay_robots: u64,
@@ -34,76 +36,36 @@ struct StackItem {
     time_remaining: u64,
 }
 
-fn geodes_opened(bp: &Blueprint) -> u64 {
+fn geodes_opened(bp: &Blueprint, time: u64) -> u64 {
+    let mut cache = HashSet::<StackItem>::new();
     let mut stack = Vec::<StackItem>::with_capacity(100);
     stack.push(StackItem {
         ore_robots: 1,
-        time_remaining: 24,
+        time_remaining: time,
         ..Default::default()
     });
     let mut geodes_opened = 0;
-    let mut best_sol = StackItem {
-        ore_robots: 1,
-        time_remaining: 24,
-        ..Default::default()
-    };
+    // how much ore is required to be able to build any robot
+    let max_ore_cost = [
+        bp.ore_cost_ore,
+        bp.clay_cost_ore,
+        bp.obs_cost_ore,
+        bp.geode_cost_ore,
+    ]
+    .into_iter()
+    .max()
+    .unwrap();
     while let Some(c) = stack.pop() {
         if c.time_remaining == 0 {
             if c.geodes > geodes_opened {
                 geodes_opened = c.geodes;
-                best_sol = c.clone();
             }
             continue;
         }
-        // check if we can build an ore robot and if we need it
-        let max_ore_cost = [bp.clay_cost_ore, bp.obs_cost_ore, bp.geode_cost_ore]
-            .into_iter()
-            .max()
-            .unwrap();
-        if c.ore >= bp.ore_cost_ore && c.ore < max_ore_cost + bp.ore_cost_ore {
-            stack.push(StackItem {
-                ore_robots: c.ore_robots + 1,
-                clay_robots: c.clay_robots,
-                obs_robots: c.obs_robots,
-                geode_robots: c.geode_robots,
-                ore: c.ore - bp.ore_cost_ore + c.ore_robots,
-                clay: c.clay + c.clay_robots,
-                obs: c.obs + c.obs_robots,
-                geodes: c.geodes + c.geode_robots,
-                time_remaining: c.time_remaining - 1,
-            });
-        }
-        // check if we can build a clay robot and if we need it
-        if c.ore >= bp.clay_cost_ore && c.clay < bp.obs_cost_clay {
-            stack.push(StackItem {
-                ore_robots: c.ore_robots,
-                clay_robots: c.clay_robots + 1,
-                obs_robots: c.obs_robots,
-                geode_robots: c.geode_robots,
-                ore: c.ore - bp.clay_cost_ore + c.ore_robots,
-                clay: c.clay + c.clay_robots,
-                obs: c.obs + c.obs_robots,
-                geodes: c.geodes + c.geode_robots,
-                time_remaining: c.time_remaining - 1,
-            });
-        }
-        // check if we can build an obsidian robot and if we need it
-        if c.ore >= bp.obs_cost_ore && c.clay >= bp.obs_cost_clay && c.obs < bp.geode_cost_obs {
-            stack.push(StackItem {
-                ore_robots: c.ore_robots,
-                clay_robots: c.clay_robots,
-                obs_robots: c.obs_robots + 1,
-                geode_robots: c.geode_robots,
-                ore: c.ore - bp.obs_cost_ore + c.ore_robots,
-                clay: c.clay - bp.obs_cost_clay + c.clay_robots,
-                obs: c.obs + c.obs_robots,
-                geodes: c.geodes + c.geode_robots,
-                time_remaining: c.time_remaining - 1,
-            });
-        }
-        // check if we can build a geode robot
+
+        // check if we can build a geode robot (we always need more)
         if c.ore >= bp.geode_cost_ore && c.obs >= bp.geode_cost_obs {
-            stack.push(StackItem {
+            let next = StackItem {
                 ore_robots: c.ore_robots,
                 clay_robots: c.clay_robots,
                 obs_robots: c.obs_robots,
@@ -113,10 +75,76 @@ fn geodes_opened(bp: &Blueprint) -> u64 {
                 obs: c.obs - bp.geode_cost_obs + c.obs_robots,
                 geodes: c.geodes + c.geode_robots,
                 time_remaining: c.time_remaining - 1,
-            });
+            };
+            let new = cache.insert(next.clone());
+            if new {
+                stack.push(next);
+            }
         }
-        // we can also wait
-        stack.push(StackItem {
+
+        // check if we can build an obsidian robot
+        if c.ore >= bp.obs_cost_ore
+            && c.clay >= bp.obs_cost_clay
+            && c.obs_robots < bp.geode_cost_obs
+        {
+            let next = StackItem {
+                ore_robots: c.ore_robots,
+                clay_robots: c.clay_robots,
+                obs_robots: c.obs_robots + 1,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.obs_cost_ore + c.ore_robots,
+                clay: c.clay - bp.obs_cost_clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            };
+            let new = cache.insert(next.clone());
+            if new {
+                stack.push(next);
+            }
+        }
+
+        // check if we can build a clay robot
+        if c.ore >= bp.clay_cost_ore && c.clay_robots < bp.obs_cost_clay {
+            let next = StackItem {
+                ore_robots: c.ore_robots,
+                clay_robots: c.clay_robots + 1,
+                obs_robots: c.obs_robots,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.clay_cost_ore + c.ore_robots,
+                clay: c.clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            };
+            let new = cache.insert(next.clone());
+            if new {
+                stack.push(next);
+            }
+        }
+
+        // check if we can build an ore robot and if we need it
+        // if we have enough robots to produce max_ore_cost in the next round, no need for more robots
+        if c.ore >= bp.ore_cost_ore && c.ore_robots < max_ore_cost {
+            let next = StackItem {
+                ore_robots: c.ore_robots + 1,
+                clay_robots: c.clay_robots,
+                obs_robots: c.obs_robots,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.ore_cost_ore + c.ore_robots,
+                clay: c.clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            };
+            let new = cache.insert(next.clone());
+            if new {
+                stack.push(next);
+            }
+        }
+
+        // we can always wait
+        let next = StackItem {
             ore_robots: c.ore_robots,
             clay_robots: c.clay_robots,
             obs_robots: c.obs_robots,
@@ -126,14 +154,17 @@ fn geodes_opened(bp: &Blueprint) -> u64 {
             obs: c.obs + c.obs_robots,
             geodes: c.geodes + c.geode_robots,
             time_remaining: c.time_remaining - 1,
-        });
+        };
+        let new = cache.insert(next.clone());
+        if new {
+            stack.push(next);
+        }
     }
-    println!("{geodes_opened} {best_sol:?}");
     geodes_opened
 }
 
 fn blueprint_quality(bp: &Blueprint) -> u64 {
-    bp.id * geodes_opened(bp)
+    bp.id * geodes_opened(bp, 24)
 }
 
 pub struct Day19;
@@ -153,8 +184,12 @@ impl Day for Day19 {
 
     type Output2 = u64;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        input
+            .iter()
+            .take(1)
+            .map(|bp| geodes_opened(bp, 32))
+            .product()
     }
 }
 
