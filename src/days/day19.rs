@@ -20,6 +20,107 @@ pub struct Blueprint {
     pub geode_cost_obs: u64,
 }
 
+#[derive(Default, Clone)]
+struct StackItem {
+    ore_robots: u64,
+    clay_robots: u64,
+    obs_robots: u64,
+    geode_robots: u64,
+    ore: u64,
+    clay: u64,
+    obs: u64,
+    geodes: u64,
+    time_remaining: u64,
+}
+
+fn geodes_opened(bp: &Blueprint) -> u64 {
+    let mut stack = Vec::<StackItem>::with_capacity(100);
+    stack.push(StackItem {
+        ore_robots: 1,
+        time_remaining: 24,
+        ..Default::default()
+    });
+    let mut geodes_opened = 0;
+    while let Some(c) = stack.pop() {
+        if c.time_remaining == 0 {
+            if c.geodes > geodes_opened {
+                geodes_opened = c.geodes;
+            }
+            continue;
+        }
+
+        // check if we can build an ore robot
+        if c.ore >= bp.ore_cost {
+            stack.push(StackItem {
+                ore_robots: c.ore_robots + 1,
+                clay_robots: c.clay_robots,
+                obs_robots: c.obs_robots,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.ore_cost + c.ore_robots,
+                clay: c.clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            });
+        }
+        // check if we can build a clay robot
+        if c.ore >= bp.clay_cost {
+            stack.push(StackItem {
+                ore_robots: c.ore_robots,
+                clay_robots: c.clay_robots + 1,
+                obs_robots: c.obs_robots,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.clay_cost + c.ore_robots,
+                clay: c.clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            });
+        }
+        // check if we can build a obsidian robot
+        if c.ore >= bp.obs_cost_ore && c.clay >= bp.obs_cost_clay {
+            stack.push(StackItem {
+                ore_robots: c.ore_robots,
+                clay_robots: c.clay_robots,
+                obs_robots: c.obs_robots + 1,
+                geode_robots: c.geode_robots,
+                ore: c.ore - bp.obs_cost_ore + c.ore_robots,
+                clay: c.clay - bp.obs_cost_clay + c.clay_robots,
+                obs: c.obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            });
+        }
+        // check if we can build a geode robot
+        if c.ore >= bp.geode_cost_ore && c.obs >= bp.geode_cost_obs {
+            stack.push(StackItem {
+                ore_robots: c.ore_robots,
+                clay_robots: c.clay_robots,
+                obs_robots: c.obs_robots,
+                geode_robots: c.geode_robots + 1,
+                ore: c.ore - bp.geode_cost_ore + c.ore_robots,
+                clay: c.clay + c.clay_robots,
+                obs: c.obs - bp.geode_cost_obs + c.obs_robots,
+                geodes: c.geodes + c.geode_robots,
+                time_remaining: c.time_remaining - 1,
+            });
+        }
+        // we can also wait
+        stack.push(StackItem {
+            ore_robots: c.ore_robots,
+            clay_robots: c.clay_robots,
+            obs_robots: c.obs_robots,
+            geode_robots: c.geode_robots,
+            ore: c.ore + c.ore_robots,
+            clay: c.clay + c.clay_robots,
+            obs: c.obs + c.obs_robots,
+            geodes: c.geodes + c.geode_robots,
+            time_remaining: c.time_remaining - 1,
+        });
+    }
+    geodes_opened
+}
+
 pub struct Day19;
 
 impl Day for Day19 {
@@ -32,8 +133,7 @@ impl Day for Day19 {
     type Output1 = u64;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        println!("{input:?}");
-        input.len() as u64
+        geodes_opened(&input[0])
     }
 
     type Output2 = u64;
