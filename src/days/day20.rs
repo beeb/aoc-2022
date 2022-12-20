@@ -10,7 +10,7 @@ const LENGTH: usize = 5000;
 
 pub struct Day20;
 
-fn mix(val: &[i64; LENGTH], idx: &mut Vec<usize>) {
+fn mix(val: &[i64], idx: &mut Vec<usize>) {
     // for each item in the original list
     for (i, v) in val.iter().enumerate() {
         // let's find where the item is now in the mixed list (find the position of i in the idx list)
@@ -20,7 +20,7 @@ fn mix(val: &[i64; LENGTH], idx: &mut Vec<usize>) {
         // calculate where this value should be inserted. We shift by `v` (from the original `val`) and
         // keep it in bounds by using rem_euclid (methematical modulo) with L-1 (since our first and last positions
         // in the cycle are contiguous)
-        let new_index = ((x as i64) + *v).rem_euclid(LENGTH as i64 - 1) as usize;
+        let new_index = ((x as i64) + *v).rem_euclid(val.len() as i64 - 1) as usize;
         idx.insert(new_index, removed);
     }
 }
@@ -34,7 +34,7 @@ fn calculate_output(val: &[i64]) -> i64 {
     // sum the values
     (1..=3)
         .map(|x| {
-            let idx = (zero_offset + 1000 * x) % LENGTH;
+            let idx = (zero_offset + 1000 * x) % val.len();
             val[idx]
         })
         .sum()
@@ -49,10 +49,10 @@ impl Day for Day20 {
 
     type Output1 = i64;
 
-    /// Part 1 took 4.5223ms
+    /// Part 1 took 4.4116ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        let val: [i64; LENGTH] = input[..LENGTH].try_into().expect("wrong array length");
-        let mut idx = (0..LENGTH).collect::<Vec<_>>();
+        let val = input.clone();
+        let mut idx = (0..val.len()).collect::<Vec<_>>();
         mix(&val, &mut idx);
         // reconstruct the list with actual values in correct order
         let val = idx.iter().map(|&i| val[i]).collect::<Vec<_>>();
@@ -65,10 +65,8 @@ impl Day for Day20 {
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // for this part, we have to multiply the values by 811589153, which doesn't affect the code/perf since we
         // modulo the shift amount (the values of the `val` list)
-        let val: [i64; LENGTH] = input.iter().map(|v| v * 811589153).collect::<Vec<_>>()[..LENGTH]
-            .try_into()
-            .expect("wrong array length");
-        let mut idx = (0..LENGTH).collect::<Vec<_>>();
+        let val = input.iter().map(|v| v * 811589153).collect::<Vec<_>>();
+        let mut idx = (0..val.len()).collect::<Vec<_>>();
         for _ in 0..10 {
             mix(&val, &mut idx);
         }
