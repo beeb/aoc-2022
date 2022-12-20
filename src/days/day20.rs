@@ -12,9 +12,8 @@ pub struct Day20;
 
 /// Move the items `i` in `val` by `val[i]` positions.
 ///
-/// The `idx` array keeps track of where the items were initially.
-/// The fact that the first and last item get swapped is not important, since our final coordinate is calculated from
-/// the position of the zero value in the list, so it doesn't matter where our list starts in the cycle
+/// The `idx` array keeps track of where the items were initially. We apply transformations on both arrays.
+/// The fact that the first and last item get swapped is not important, since our array is cyclic.
 fn mix(val: &mut [i64; LENGTH], idx: &mut [usize; LENGTH]) {
     // for each item in the original list
     for i in 0..LENGTH {
