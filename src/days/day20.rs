@@ -68,6 +68,7 @@ impl Day for Day20 {
 
     type Output1 = i64;
 
+    /// Part 1 took 28.9983ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let mut val: [i64; LENGTH] = input[..LENGTH].try_into().expect("wrong array length");
         let mut idx: [usize; LENGTH] = (0..LENGTH).collect::<Vec<_>>().try_into().unwrap();
@@ -77,6 +78,7 @@ impl Day for Day20 {
 
     type Output2 = i64;
 
+    /// Part 2 took 291.3182ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // for this part, we have to multiply the values by 811589153, which doesn't affect the code/perf since we
         // modulo the shift amount (the values of the `val` list)
