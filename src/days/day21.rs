@@ -1,9 +1,7 @@
-use std::rc::Rc;
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, char, i32, line_ending},
+    character::complete::{alpha1, char, i64, line_ending},
     combinator::map,
     multi::separated_list0,
     sequence::{separated_pair, tuple},
@@ -12,6 +10,7 @@ use nom::{
 
 use crate::days::Day;
 
+#[derive(Debug)]
 pub enum Operator {
     Add,
     Sub,
@@ -31,27 +30,37 @@ impl From<char> for Operator {
     }
 }
 
-pub struct NumberMonkey {
-    pub number: i32,
-}
-
-pub struct OperationMonkey {
+#[derive(Debug)]
+pub struct Operation {
     pub left: String,
     pub right: String,
     pub operator: Operator,
 }
 
-pub enum Monkey {
-    Number(NumberMonkey),
-    Operation(OperationMonkey),
+impl Operation {
+    fn calc(&self, left: i64, right: i64) -> i64 {
+        match self.operator {
+            Operator::Add => left + right,
+            Operator::Sub => left - right,
+            Operator::Mult => left * right,
+            Operator::Div => left / right,
+        }
+    }
 }
 
-pub struct MonkeyWithName {
-    name: String,
-    monkey: Monkey,
+#[derive(Debug)]
+pub enum MonkeyType {
+    Number(i64),
+    Operation(Operation),
 }
 
-fn parse_operator_monkey(input: &str) -> IResult<&str, Monkey> {
+#[derive(Debug)]
+pub struct Monkey {
+    pub name: String,
+    pub mtype: MonkeyType,
+}
+
+fn parse_operator_monkey(input: &str) -> IResult<&str, MonkeyType> {
     map(
         tuple((
             map(alpha1, String::from),
@@ -64,7 +73,7 @@ fn parse_operator_monkey(input: &str) -> IResult<&str, Monkey> {
             map(alpha1, String::from),
         )),
         |(left, _, operator, _, right)| {
-            Monkey::Operation(OperationMonkey {
+            MonkeyType::Operation(Operation {
                 left,
                 operator,
                 right,
@@ -73,32 +82,47 @@ fn parse_operator_monkey(input: &str) -> IResult<&str, Monkey> {
     )(input)
 }
 
-fn parse_number_monkey(input: &str) -> IResult<&str, Monkey> {
-    map(i32, |n| Monkey::Number(NumberMonkey { number: n }))(input)
+fn parse_number_monkey(input: &str) -> IResult<&str, MonkeyType> {
+    map(i64, MonkeyType::Number)(input)
 }
 
-fn parse_monkey(input: &str) -> IResult<&str, MonkeyWithName> {
-    let (rest, (name, monkey)) = separated_pair(
+fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
+    let (rest, (name, mtype)) = separated_pair(
         map(alpha1, String::from),
         tag(": "),
         alt((parse_number_monkey, parse_operator_monkey)),
     )(input)?;
-    Ok((rest, MonkeyWithName { name, monkey }))
+    Ok((rest, Monkey { name, mtype }))
+}
+
+fn get_monkey_value(monkey: &Monkey, monkeys: &[Monkey]) -> i64 {
+    match &monkey.mtype {
+        MonkeyType::Number(n) => *n,
+        MonkeyType::Operation(operation) => {
+            let left_monkey = monkeys.iter().find(|m| m.name == operation.left).unwrap();
+            let right_monkey = monkeys.iter().find(|m| m.name == operation.right).unwrap();
+            operation.calc(
+                get_monkey_value(left_monkey, monkeys),
+                get_monkey_value(right_monkey, monkeys),
+            )
+        }
+    }
 }
 
 pub struct Day21;
 
 impl Day for Day21 {
-    type Input = Vec<MonkeyWithName>;
+    type Input = Vec<Monkey>;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
         separated_list0(line_ending, parse_monkey)(input)
     }
 
-    type Output1 = usize;
+    type Output1 = i64;
 
-    fn part_1(_input: &Self::Input) -> Self::Output1 {
-        unimplemented!("part_1")
+    fn part_1(input: &Self::Input) -> Self::Output1 {
+        let root = input.iter().find(|m| m.name == "root").unwrap();
+        get_monkey_value(root, input)
     }
 
     type Output2 = usize;
