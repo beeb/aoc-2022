@@ -40,6 +40,7 @@ pub struct Operation {
 }
 
 impl Operation {
+    /// Apply the operation to find the result
     fn calc(&self, left: i64, right: i64) -> i64 {
         match self.operator {
             Operator::Add => left + right,
@@ -49,6 +50,7 @@ impl Operation {
         }
     }
 
+    /// Find the unknown left or right, knowing the other operand and the result of the operation
     fn solve(&self, result: i64, left: Option<i64>, right: Option<i64>) -> i64 {
         match self.operator {
             Operator::Add => {
