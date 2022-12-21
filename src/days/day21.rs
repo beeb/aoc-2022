@@ -48,6 +48,51 @@ impl Operation {
             Operator::Div => left / right,
         }
     }
+
+    fn solve(&self, result: i64, left: Option<i64>, right: Option<i64>) -> i64 {
+        match self.operator {
+            Operator::Add => {
+                // result = left + x => x = result - left || result = right + x => x = result - right
+                result - Self::get_some(left, right)
+            }
+            Operator::Sub => {
+                if let Some(left) = left {
+                    // result = left - x => x = left - result
+                    left - result
+                } else if let Some(right) = right {
+                    // result = x - right => x = result + right
+                    result + right
+                } else {
+                    unreachable!("one branch needs to be defined")
+                }
+            }
+            Operator::Mult => {
+                // result = left * x => x = result / left || result = right * x => x = result / right
+                result / Self::get_some(left, right)
+            }
+            Operator::Div => {
+                if let Some(left) = left {
+                    // result = left / x => x = left / result
+                    left / result
+                } else if let Some(right) = right {
+                    // result = x / right => x = result * right
+                    result * right
+                } else {
+                    unreachable!("one branch needs to be defined")
+                }
+            }
+        }
+    }
+
+    /// Helper to get the Some(value) amongst two Option's
+    fn get_some(left: Option<i64>, right: Option<i64>) -> i64 {
+        if let Some(left) = left {
+            return left;
+        } else if let Some(right) = right {
+            return right;
+        }
+        unreachable!("one branch needs to be defined")
+    }
 }
 
 #[derive(Debug)]
@@ -125,16 +170,6 @@ fn get_monkey_value(
     }
 }
 
-/// Helper to get the Some(value) amongst two Option's
-fn get_some(left: Option<i64>, right: Option<i64>) -> i64 {
-    if let Some(left) = left {
-        return left;
-    } else if let Some(right) = right {
-        return right;
-    }
-    unreachable!("one branch needs to be defined")
-}
-
 /// Recursively find the value for the undefined node "humn".
 fn find_humn_value(monkey: &Monkey, monkeys: &HashMap<String, Monkey>, value: i64) -> i64 {
     // first, check which monkey type we have
@@ -148,38 +183,7 @@ fn find_humn_value(monkey: &Monkey, monkeys: &HashMap<String, Monkey>, value: i6
             let left_val = get_monkey_value(left_monkey, monkeys, true);
             let right_val = get_monkey_value(right_monkey, monkeys, true);
             // we check the type of operation, and solve the equation to know the value of the undefined branch
-            let val = match operation.operator {
-                Operator::Add => {
-                    // value = left + x => x = value - left || value = right + x => x = value - right
-                    value - get_some(left_val, right_val)
-                }
-                Operator::Sub => {
-                    if let Some(left) = left_val {
-                        // value = left - x => x = left - value
-                        left - value
-                    } else if let Some(right) = right_val {
-                        // value = x - right => x = value + right
-                        value + right
-                    } else {
-                        unreachable!("one branch needs to be defined")
-                    }
-                }
-                Operator::Mult => {
-                    // value = left * x => x = value / left || value = right * x => x = value / right
-                    value / get_some(left_val, right_val)
-                }
-                Operator::Div => {
-                    if let Some(left) = left_val {
-                        // value = left / x => x = left / value
-                        left / value
-                    } else if let Some(right) = right_val {
-                        // value = x / right => x = value * right
-                        value * right
-                    } else {
-                        unreachable!("one branch needs to be defined")
-                    }
-                }
-            };
+            let val = operation.solve(value, left_val, right_val);
             // now we know that the undefined branch (where its value is None) should have a value of "val"
             if left_val.is_none() {
                 find_humn_value(left_monkey, monkeys, val)
