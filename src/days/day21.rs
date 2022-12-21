@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -95,12 +97,12 @@ fn parse_monkey(input: &str) -> IResult<&str, Monkey> {
     Ok((rest, Monkey { name, mtype }))
 }
 
-fn get_monkey_value(monkey: &Monkey, monkeys: &[Monkey]) -> i64 {
+fn get_monkey_value(monkey: &Monkey, monkeys: &HashMap<String, Monkey>) -> i64 {
     match &monkey.mtype {
         MonkeyType::Number(n) => *n,
         MonkeyType::Operation(operation) => {
-            let left_monkey = monkeys.iter().find(|m| m.name == operation.left).unwrap();
-            let right_monkey = monkeys.iter().find(|m| m.name == operation.right).unwrap();
+            let left_monkey = monkeys.get(&operation.left).unwrap();
+            let right_monkey = monkeys.get(&operation.right).unwrap();
             operation.calc(
                 get_monkey_value(left_monkey, monkeys),
                 get_monkey_value(right_monkey, monkeys),
@@ -112,16 +114,22 @@ fn get_monkey_value(monkey: &Monkey, monkeys: &[Monkey]) -> i64 {
 pub struct Day21;
 
 impl Day for Day21 {
-    type Input = Vec<Monkey>;
+    type Input = HashMap<String, Monkey>;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
-        separated_list0(line_ending, parse_monkey)(input)
+        let (rest, monkeys) = separated_list0(line_ending, parse_monkey)(input)?;
+        let mut map = HashMap::<String, Monkey>::new();
+        for monkey in monkeys {
+            map.insert(monkey.name.clone(), monkey);
+        }
+        Ok((rest, map))
     }
 
     type Output1 = i64;
 
+    /// Part 1 took 0.1176ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        let root = input.iter().find(|m| m.name == "root").unwrap();
+        let root = input.get("root").unwrap();
         get_monkey_value(root, input)
     }
 
