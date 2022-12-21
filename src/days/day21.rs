@@ -161,7 +161,7 @@ fn find_humn_value(monkey: &Monkey, monkeys: &HashMap<String, Monkey>, value: i6
                         // value = x - right => x = value + right
                         value + right
                     } else {
-                        unimplemented!()
+                        unreachable!("one branch needs to be defined")
                     }
                 }
                 Operator::Mult => {
@@ -176,7 +176,7 @@ fn find_humn_value(monkey: &Monkey, monkeys: &HashMap<String, Monkey>, value: i6
                         // value = x / right => x = value * right
                         value * right
                     } else {
-                        unimplemented!()
+                        unreachable!("one branch needs to be defined")
                     }
                 }
             };
@@ -234,6 +234,6 @@ impl Day for Day21 {
             // we know that the result of "left_monkey" should be "right_val" since they need to be equal
             return find_humn_value(left_monkey, input, right_val);
         }
-        unimplemented!("not found");
+        panic!("not found");
     }
 }
