@@ -132,7 +132,7 @@ fn get_some(left: Option<i64>, right: Option<i64>) -> i64 {
     } else if let Some(right) = right {
         return right;
     }
-    unimplemented!("both were none");
+    unreachable!("one branch needs to be defined")
 }
 
 /// Recursively find the value for the undefined node "humn".
