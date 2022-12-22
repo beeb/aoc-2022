@@ -128,7 +128,7 @@ impl Player {
     fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
         let face = Self::get_face(x, y);
         let (xl, yl) = Self::coord_in_face(x, y);
-        let next = match face {
+        match face {
             1 => match dir {
                 Dir::Right => (x + 1, y, Dir::Right),
                 Dir::Left => {
@@ -263,28 +263,19 @@ impl Player {
                     }
                 }
             },
-        };
-        let next_face = Self::get_face(next.0, next.1);
-        let (next_xl, next_yl) = Self::coord_in_face(next.0, next.1);
-        if next_face != face {
-            println!(
-                "{xl}, {yl}, {dir:?}, {face} => {next_xl}, {next_yl}, {:?} {next_face}",
-                next.2
-            );
         }
-        next
     }
 
     fn walk2(&mut self, dist: &usize, grid: &[Vec<Tile>]) {
         let mut remaining = *dist;
         while remaining > 0 {
             let (next_x, next_y, next_dir) = Self::next_coord(self.x, self.y, &self.dir);
-            self.dir = next_dir;
             let next_tile = &grid[next_y][next_x];
             match next_tile {
                 Tile::Free => {
                     self.x = next_x;
                     self.y = next_y;
+                    self.dir = next_dir;
                 }
                 Tile::Wall => {
                     break;
