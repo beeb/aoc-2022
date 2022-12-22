@@ -19,9 +19,46 @@ pub enum Tile {
 
 #[derive(Debug)]
 pub enum Instruction {
-    Walk(u32),
+    Walk(usize),
     RotateLeft,
     RotateRight,
+}
+
+#[derive(Debug)]
+pub enum Dir {
+    Right,
+    Down,
+    Left,
+    Up,
+}
+
+impl From<Dir> for usize {
+    fn from(value: Dir) -> Self {
+        match value {
+            Dir::Right => 0,
+            Dir::Down => 1,
+            Dir::Left => 2,
+            Dir::Up => 3,
+        }
+    }
+}
+
+impl From<usize> for Dir {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => Dir::Right,
+            1 => Dir::Down,
+            2 => Dir::Left,
+            _ => Dir::Up,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Player {
+    x: usize,
+    y: usize,
+    dir: Dir,
 }
 
 fn parse_grid(input: &str) -> IResult<&str, Vec<Vec<Tile>>> {
@@ -40,7 +77,7 @@ fn parse_sequence(input: &str) -> IResult<&str, Vec<Instruction>> {
     many1(map(alt((digit1, tag("R"), tag("L"))), |c| match c {
         "R" => Instruction::RotateRight,
         "L" => Instruction::RotateLeft,
-        dist => Instruction::Walk(dist.parse::<u32>().unwrap()),
+        dist => Instruction::Walk(dist.parse::<usize>().unwrap()),
     }))(input)
 }
 
@@ -57,7 +94,16 @@ impl Day for Day22 {
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let grid = &input.0;
-        let instructions = &input.1;
+        let instr = &input.1;
+        let player = Player {
+            x: grid[0]
+                .iter()
+                .position(|t| matches!(t, Tile::Free))
+                .unwrap(),
+            y: 0,
+            dir: Dir::Right,
+        };
+        println!("{player:?}");
         0
     }
 
