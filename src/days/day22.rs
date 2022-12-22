@@ -11,6 +11,8 @@ use nom::{
 
 use crate::days::Day;
 
+const CUBE_SIZE: usize = 50;
+
 #[derive(Debug)]
 pub enum Tile {
     Out,
@@ -63,7 +65,7 @@ pub struct Player {
 }
 
 impl Player {
-    fn perform(&mut self, instr: &Instruction, grid: &[Vec<Tile>]) {
+    pub fn perform(&mut self, instr: &Instruction, grid: &[Vec<Tile>], part2: bool) {
         match instr {
             Instruction::RotateLeft => {
                 self.dir = (isize::from(&self.dir) - 1).rem_euclid(4).into();
@@ -72,70 +74,292 @@ impl Player {
                 self.dir = (isize::from(&self.dir) + 1).rem_euclid(4).into();
             }
             Instruction::Walk(dist) => {
-                let mut remaining = *dist;
-                while remaining > 0 {
-                    let (next_x, next_y, next_tile) = match &self.dir {
-                        Dir::Right => {
-                            let row = &grid[self.y];
-                            let (next_x, next_tile) = row
-                                .iter()
-                                .enumerate()
-                                .cycle()
-                                .skip(self.x + 1)
-                                .find(|(_, t)| !matches!(t, Tile::Out))
-                                .unwrap();
-                            (next_x, self.y, next_tile)
-                        }
-                        Dir::Down => {
-                            let col = grid.iter().map_while(|row| row.get(self.x));
-                            let (next_y, next_tile) = col
-                                .enumerate()
-                                .cycle()
-                                .skip(self.y + 1)
-                                .find(|(_, t)| !matches!(t, Tile::Out))
-                                .unwrap();
-                            (self.x, next_y, next_tile)
-                        }
-                        Dir::Left => {
-                            let row = &grid[self.y];
-                            let (next_x, next_tile) = row
-                                .iter()
-                                .enumerate()
-                                .rev()
-                                .cycle()
-                                .skip(row.len() - self.x)
-                                .find(|(_, t)| !matches!(t, Tile::Out))
-                                .unwrap();
-                            (next_x, self.y, next_tile)
-                        }
-                        Dir::Up => {
-                            let col = grid.iter().map_while(|row| row.get(self.x)).collect_vec();
-                            let (next_y, next_tile) = col
-                                .iter()
-                                .enumerate()
-                                .rev()
-                                .cycle()
-                                .skip(col.len() - self.y)
-                                .find(|(_, t)| !matches!(t, Tile::Out))
-                                .unwrap();
-                            (self.x, next_y, *next_tile)
-                        }
-                    };
-                    match next_tile {
-                        Tile::Free => {
-                            self.x = next_x;
-                            self.y = next_y;
-                        }
-                        Tile::Wall => {
-                            break;
-                        }
-                        Tile::Out => {
-                            unreachable!()
-                        }
-                    }
-                    remaining -= 1;
+                if part2 {
+                    self.walk2(dist, grid);
+                } else {
+                    self.walk(dist, grid);
                 }
             }
+        }
+    }
+
+    fn get_face(x: usize, y: usize) -> usize {
+        if y < CUBE_SIZE {
+            if x < 2 * CUBE_SIZE {
+                return 1;
+            }
+            return 2;
+        }
+        if y < 2 * CUBE_SIZE {
+            return 3;
+        }
+        if y < 3 * CUBE_SIZE {
+            if x < CUBE_SIZE {
+                return 4;
+            }
+            return 5;
+        }
+        6
+    }
+
+    fn coord_in_face(x: usize, y: usize) -> (usize, usize) {
+        let face = Self::get_face(x, y);
+        match face {
+            1 => (x - CUBE_SIZE, y),
+            2 => (x - 2 * CUBE_SIZE, y),
+            3 => (x - CUBE_SIZE, y - CUBE_SIZE),
+            4 => (x, y - 2 * CUBE_SIZE),
+            5 => (x - CUBE_SIZE, y - 2 * CUBE_SIZE),
+            _ => (x, y - 3 * CUBE_SIZE),
+        }
+    }
+
+    fn face_to_global(x: usize, y: usize, face: usize) -> (usize, usize) {
+        match face {
+            1 => (x + CUBE_SIZE, y),
+            2 => (x + 2 * CUBE_SIZE, y),
+            3 => (x + CUBE_SIZE, y + CUBE_SIZE),
+            4 => (x, y + 2 * CUBE_SIZE),
+            5 => (x + CUBE_SIZE, y + 2 * CUBE_SIZE),
+            _ => (x, y + 3 * CUBE_SIZE),
+        }
+    }
+
+    fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
+        let face = Self::get_face(x, y);
+        let (xl, yl) = Self::coord_in_face(x, y);
+        let next = match face {
+            1 => match dir {
+                Dir::Right => (x + 1, y, Dir::Right),
+                Dir::Left => {
+                    if xl == 0 {
+                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 4);
+                        (nx, ny, Dir::Right)
+                    } else {
+                        (x - 1, y, Dir::Left)
+                    }
+                }
+                Dir::Up => {
+                    if yl == 0 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 6);
+                        (nx, ny, Dir::Right)
+                    } else {
+                        (x, y - 1, Dir::Up)
+                    }
+                }
+                Dir::Down => (x, y + 1, Dir::Down),
+            },
+            2 => match dir {
+                Dir::Right => {
+                    if xl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 5);
+                        (nx, ny, Dir::Left)
+                    } else {
+                        (x + 1, y, Dir::Right)
+                    }
+                }
+                Dir::Left => (x - 1, y, Dir::Left),
+                Dir::Up => {
+                    if yl == 0 {
+                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - 1, 6);
+                        (nx, ny, Dir::Up)
+                    } else {
+                        (x, y - 1, Dir::Up)
+                    }
+                }
+                Dir::Down => {
+                    if yl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 3);
+                        (nx, ny, Dir::Left)
+                    } else {
+                        (x, y + 1, Dir::Down)
+                    }
+                }
+            },
+            3 => match dir {
+                Dir::Right => {
+                    if xl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 2);
+                        (nx, ny, Dir::Up)
+                    } else {
+                        (x + 1, y, Dir::Right)
+                    }
+                }
+                Dir::Left => {
+                    if xl == 0 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 4);
+                        (nx, ny, Dir::Down)
+                    } else {
+                        (x - 1, y, Dir::Left)
+                    }
+                }
+                Dir::Up => (x, y - 1, Dir::Up),
+                Dir::Down => (x, y + 1, Dir::Down),
+            },
+            4 => match dir {
+                Dir::Right => (x + 1, y, Dir::Right),
+                Dir::Left => {
+                    if xl == 0 {
+                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 1);
+                        (nx, ny, Dir::Right)
+                    } else {
+                        (x - 1, y, Dir::Left)
+                    }
+                }
+                Dir::Up => {
+                    if yl == 0 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 3);
+                        (nx, ny, Dir::Right)
+                    } else {
+                        (x, y - 1, Dir::Up)
+                    }
+                }
+                Dir::Down => (x, y + 1, Dir::Down),
+            },
+            5 => match dir {
+                Dir::Right => {
+                    if xl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 2);
+                        (nx, ny, Dir::Left)
+                    } else {
+                        (x + 1, y, Dir::Right)
+                    }
+                }
+                Dir::Left => (x - 1, y, Dir::Left),
+                Dir::Up => (x, y - 1, Dir::Up),
+                Dir::Down => {
+                    if yl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 6);
+                        (nx, ny, Dir::Left)
+                    } else {
+                        (x, y + 1, Dir::Down)
+                    }
+                }
+            },
+            _ => match dir {
+                Dir::Right => {
+                    if xl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 5);
+                        (nx, ny, Dir::Up)
+                    } else {
+                        (x + 1, y, Dir::Right)
+                    }
+                }
+                Dir::Left => {
+                    if xl == 0 {
+                        let (nx, ny) = Self::face_to_global(yl, xl, 1);
+                        (nx, ny, Dir::Down)
+                    } else {
+                        (x - 1, y, Dir::Left)
+                    }
+                }
+                Dir::Up => (x, y - 1, Dir::Up),
+                Dir::Down => {
+                    if yl == CUBE_SIZE - 1 {
+                        let (nx, ny) = Self::face_to_global(xl, yl, 2);
+                        (nx, ny, Dir::Down)
+                    } else {
+                        (x, y + 1, Dir::Down)
+                    }
+                }
+            },
+        };
+        let next_face = Self::get_face(next.0, next.1);
+        let (next_xl, next_yl) = Self::coord_in_face(next.0, next.1);
+        if next_face != face {
+            println!(
+                "{xl}, {yl}, {dir:?}, {face} => {next_xl}, {next_yl}, {:?} {next_face}",
+                next.2
+            );
+        }
+        next
+    }
+
+    fn walk2(&mut self, dist: &usize, grid: &[Vec<Tile>]) {
+        let mut remaining = *dist;
+        while remaining > 0 {
+            let (next_x, next_y, next_dir) = Self::next_coord(self.x, self.y, &self.dir);
+            self.dir = next_dir;
+            let next_tile = &grid[next_y][next_x];
+            match next_tile {
+                Tile::Free => {
+                    self.x = next_x;
+                    self.y = next_y;
+                }
+                Tile::Wall => {
+                    break;
+                }
+                Tile::Out => {
+                    unreachable!()
+                }
+            }
+            remaining -= 1;
+        }
+    }
+
+    fn walk(&mut self, dist: &usize, grid: &[Vec<Tile>]) {
+        let mut remaining = *dist;
+        while remaining > 0 {
+            let (next_x, next_y, next_tile) = match &self.dir {
+                Dir::Right => {
+                    let row = &grid[self.y];
+                    let (next_x, next_tile) = row
+                        .iter()
+                        .enumerate()
+                        .cycle()
+                        .skip(self.x + 1)
+                        .find(|(_, t)| !matches!(t, Tile::Out))
+                        .unwrap();
+                    (next_x, self.y, next_tile)
+                }
+                Dir::Down => {
+                    let col = grid.iter().map_while(|row| row.get(self.x));
+                    let (next_y, next_tile) = col
+                        .enumerate()
+                        .cycle()
+                        .skip(self.y + 1)
+                        .find(|(_, t)| !matches!(t, Tile::Out))
+                        .unwrap();
+                    (self.x, next_y, next_tile)
+                }
+                Dir::Left => {
+                    let row = &grid[self.y];
+                    let (next_x, next_tile) = row
+                        .iter()
+                        .enumerate()
+                        .rev()
+                        .cycle()
+                        .skip(row.len() - self.x)
+                        .find(|(_, t)| !matches!(t, Tile::Out))
+                        .unwrap();
+                    (next_x, self.y, next_tile)
+                }
+                Dir::Up => {
+                    let col = grid.iter().map_while(|row| row.get(self.x)).collect_vec();
+                    let (next_y, next_tile) = col
+                        .iter()
+                        .enumerate()
+                        .rev()
+                        .cycle()
+                        .skip(col.len() - self.y)
+                        .find(|(_, t)| !matches!(t, Tile::Out))
+                        .unwrap();
+                    (self.x, next_y, *next_tile)
+                }
+            };
+            match next_tile {
+                Tile::Free => {
+                    self.x = next_x;
+                    self.y = next_y;
+                }
+                Tile::Wall => {
+                    break;
+                }
+                Tile::Out => {
+                    unreachable!()
+                }
+            }
+            remaining -= 1;
         }
     }
 }
@@ -183,14 +407,27 @@ impl Day for Day22 {
             dir: Dir::Right,
         };
         for i in instr {
-            player.perform(i, grid);
+            player.perform(i, grid, false);
         }
         1000 * (player.y + 1) + 4 * (player.x + 1) + isize::from(&player.dir) as usize
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let grid = &input.0;
+        let instr = &input.1;
+        let mut player = Player {
+            x: grid[0]
+                .iter()
+                .position(|t| matches!(t, Tile::Free))
+                .unwrap(),
+            y: 0,
+            dir: Dir::Right,
+        };
+        for i in instr {
+            player.perform(i, grid, true);
+        }
+        1000 * (player.y + 1) + 4 * (player.x + 1) + isize::from(&player.dir) as usize
     }
 }
