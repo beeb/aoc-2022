@@ -1,3 +1,4 @@
+use colored::Colorize;
 use itertools::Itertools;
 use nom::{
     branch::alt,
@@ -246,7 +247,7 @@ fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
             Dir::Up => (x, y - 1, Dir::Up),
             Dir::Down => {
                 if yl == CUBE_SIZE - 1 {
-                    let (nx, ny) = face_to_global(xl, yl, 2);
+                    let (nx, ny) = face_to_global(xl, 0, 2);
                     (nx, ny, Dir::Down)
                 } else {
                     (x, y + 1, Dir::Down)
@@ -254,6 +255,39 @@ fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
             }
         },
     }
+}
+
+fn print_cube_face(px: usize, py: usize, dir: &Dir, grid: &[Vec<Tile>]) {
+    for (y, row) in grid
+        .iter()
+        .enumerate()
+        .skip((py / CUBE_SIZE) * CUBE_SIZE)
+        .take(CUBE_SIZE)
+    {
+        for (x, cell) in row
+            .iter()
+            .enumerate()
+            .skip((px / CUBE_SIZE) * CUBE_SIZE)
+            .take(CUBE_SIZE)
+        {
+            if x == px && y == py {
+                match dir {
+                    Dir::Right => print!("{}", ">".on_red()),
+                    Dir::Down => print!("{}", "v".on_red()),
+                    Dir::Left => print!("{}", "<".on_red()),
+                    Dir::Up => print!("{}", "^".on_red()),
+                }
+                continue;
+            }
+            match cell {
+                Tile::Free => print!("."),
+                Tile::Out => {}
+                Tile::Wall => print!("#"),
+            }
+        }
+        println!();
+    }
+    println!();
 }
 
 #[derive(Debug)]
@@ -289,6 +323,14 @@ impl Player {
             let next_tile = &grid[next_y][next_x];
             match next_tile {
                 Tile::Free => {
+                    /* let face = get_face(self.x, self.y);
+                    let next_face = get_face(next_x, next_y);
+                    if face != next_face {
+                        print_cube_face(self.x, self.y, &self.dir, grid);
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                        print_cube_face(next_x, next_y, &next_dir, grid);
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                    } */
                     self.x = next_x;
                     self.y = next_y;
                     self.dir = next_dir;
@@ -434,6 +476,8 @@ impl Day for Day22 {
         };
         for i in instr {
             player.perform(i, grid, true);
+            /* print_cube_face(player.x, player.y, &player.dir, grid);
+            std::thread::sleep(std::time::Duration::from_secs(1)); */
         }
         1000 * (player.y + 1) + 4 * (player.x + 1) + isize::from(&player.dir) as usize
     }
