@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -32,8 +33,8 @@ pub enum Dir {
     Up,
 }
 
-impl From<Dir> for usize {
-    fn from(value: Dir) -> Self {
+impl From<&Dir> for isize {
+    fn from(value: &Dir) -> Self {
         match value {
             Dir::Right => 0,
             Dir::Down => 1,
@@ -43,8 +44,8 @@ impl From<Dir> for usize {
     }
 }
 
-impl From<usize> for Dir {
-    fn from(value: usize) -> Self {
+impl From<isize> for Dir {
+    fn from(value: isize) -> Self {
         match value {
             0 => Dir::Right,
             1 => Dir::Down,
@@ -59,6 +60,84 @@ pub struct Player {
     x: usize,
     y: usize,
     dir: Dir,
+}
+
+impl Player {
+    fn perform(&mut self, instr: &Instruction, grid: &[Vec<Tile>]) {
+        match instr {
+            Instruction::RotateLeft => {
+                self.dir = (isize::from(&self.dir) - 1).rem_euclid(4).into();
+            }
+            Instruction::RotateRight => {
+                self.dir = (isize::from(&self.dir) + 1).rem_euclid(4).into();
+            }
+            Instruction::Walk(dist) => {
+                let mut remaining = *dist;
+                while remaining > 0 {
+                    let (next_x, next_y, next_tile) = match &self.dir {
+                        Dir::Right => {
+                            let row = &grid[self.y];
+                            let (next_x, next_tile) = row
+                                .iter()
+                                .enumerate()
+                                .cycle()
+                                .skip(self.x + 1)
+                                .find(|(_, t)| !matches!(t, Tile::Out))
+                                .unwrap();
+                            (next_x, self.y, next_tile)
+                        }
+                        Dir::Down => {
+                            let col = grid.iter().map_while(|row| row.get(self.x));
+                            let (next_y, next_tile) = col
+                                .enumerate()
+                                .cycle()
+                                .skip(self.y + 1)
+                                .find(|(_, t)| !matches!(t, Tile::Out))
+                                .unwrap();
+                            (self.x, next_y, next_tile)
+                        }
+                        Dir::Left => {
+                            let row = &grid[self.y];
+                            let (next_x, next_tile) = row
+                                .iter()
+                                .enumerate()
+                                .rev()
+                                .cycle()
+                                .skip(row.len() - self.x)
+                                .find(|(_, t)| !matches!(t, Tile::Out))
+                                .unwrap();
+                            (next_x, self.y, next_tile)
+                        }
+                        Dir::Up => {
+                            let col = grid.iter().map_while(|row| row.get(self.x)).collect_vec();
+                            let (next_y, next_tile) = col
+                                .iter()
+                                .enumerate()
+                                .rev()
+                                .cycle()
+                                .skip(col.len() - self.y)
+                                .find(|(_, t)| !matches!(t, Tile::Out))
+                                .unwrap();
+                            (self.x, next_y, *next_tile)
+                        }
+                    };
+                    match next_tile {
+                        Tile::Free => {
+                            self.x = next_x;
+                            self.y = next_y;
+                        }
+                        Tile::Wall => {
+                            break;
+                        }
+                        Tile::Out => {
+                            unreachable!()
+                        }
+                    }
+                    remaining -= 1;
+                }
+            }
+        }
+    }
 }
 
 fn parse_grid(input: &str) -> IResult<&str, Vec<Vec<Tile>>> {
@@ -95,7 +174,7 @@ impl Day for Day22 {
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let grid = &input.0;
         let instr = &input.1;
-        let player = Player {
+        let mut player = Player {
             x: grid[0]
                 .iter()
                 .position(|t| matches!(t, Tile::Free))
@@ -103,8 +182,10 @@ impl Day for Day22 {
             y: 0,
             dir: Dir::Right,
         };
-        println!("{player:?}");
-        0
+        for i in instr {
+            player.perform(i, grid);
+        }
+        1000 * (player.y + 1) + 4 * (player.x + 1) + isize::from(&player.dir) as usize
     }
 
     type Output2 = usize;
