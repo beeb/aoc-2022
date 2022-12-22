@@ -59,7 +59,8 @@ impl Operation {
             }
             Operator::Sub => {
                 // result = left - x => x = left - result || result = x - right => x = result + right
-                left.map(|l| l - result).unwrap_or(result + right.unwrap())
+                left.map(|l| l - result)
+                    .unwrap_or_else(|| result + right.unwrap())
             }
             Operator::Mult => {
                 // result = left * x => x = result / left || result = right * x => x = result / right
@@ -67,7 +68,8 @@ impl Operation {
             }
             Operator::Div => {
                 // result = left / x => x = left / result || result = x / right => x = result * right
-                left.map(|l| l / result).unwrap_or(result * right.unwrap())
+                left.map(|l| l / result)
+                    .unwrap_or_else(|| result * right.unwrap())
             }
         }
     }
