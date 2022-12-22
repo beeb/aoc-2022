@@ -55,45 +55,21 @@ impl Operation {
         match self.operator {
             Operator::Add => {
                 // result = left + x => x = result - left || result = right + x => x = result - right
-                result - Self::get_some(left, right)
+                result - left.or(right).unwrap()
             }
             Operator::Sub => {
-                if let Some(left) = left {
-                    // result = left - x => x = left - result
-                    left - result
-                } else if let Some(right) = right {
-                    // result = x - right => x = result + right
-                    result + right
-                } else {
-                    unreachable!("one branch needs to be defined")
-                }
+                // result = left - x => x = left - result || result = x - right => x = result + right
+                left.map(|l| l - result).unwrap_or(result + right.unwrap())
             }
             Operator::Mult => {
                 // result = left * x => x = result / left || result = right * x => x = result / right
-                result / Self::get_some(left, right)
+                result / left.or(right).unwrap()
             }
             Operator::Div => {
-                if let Some(left) = left {
-                    // result = left / x => x = left / result
-                    left / result
-                } else if let Some(right) = right {
-                    // result = x / right => x = result * right
-                    result * right
-                } else {
-                    unreachable!("one branch needs to be defined")
-                }
+                // result = left / x => x = left / result || result = x / right => x = result * right
+                left.map(|l| l / result).unwrap_or(result * right.unwrap())
             }
         }
-    }
-
-    /// Helper to get the Some(value) amongst two Option's
-    fn get_some(left: Option<i64>, right: Option<i64>) -> i64 {
-        if let Some(left) = left {
-            return left;
-        } else if let Some(right) = right {
-            return right;
-        }
-        unreachable!("one branch needs to be defined")
     }
 }
 
