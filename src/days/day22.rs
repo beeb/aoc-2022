@@ -257,6 +257,7 @@ fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
     }
 }
 
+#[allow(unused)]
 fn print_cube_face(px: usize, py: usize, dir: &Dir, grid: &[Vec<Tile>]) {
     for (y, row) in grid
         .iter()
