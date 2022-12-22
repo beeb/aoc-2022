@@ -57,6 +57,205 @@ impl From<isize> for Dir {
     }
 }
 
+///     11112222
+///     11112222
+///     11112222
+///     11112222
+///     3333
+///     3333
+///     3333
+///     3333
+/// 44445555
+/// 44445555
+/// 44445555
+/// 44445555
+/// 6666
+/// 6666
+/// 6666
+/// 6666
+fn get_face(x: usize, y: usize) -> usize {
+    if y < CUBE_SIZE {
+        if x < 2 * CUBE_SIZE {
+            return 1;
+        }
+        return 2;
+    }
+    if y < 2 * CUBE_SIZE {
+        return 3;
+    }
+    if y < 3 * CUBE_SIZE {
+        if x < CUBE_SIZE {
+            return 4;
+        }
+        return 5;
+    }
+    6
+}
+
+fn coord_in_face(x: usize, y: usize) -> (usize, usize) {
+    let face = get_face(x, y);
+    match face {
+        1 => (x - CUBE_SIZE, y),
+        2 => (x - 2 * CUBE_SIZE, y),
+        3 => (x - CUBE_SIZE, y - CUBE_SIZE),
+        4 => (x, y - 2 * CUBE_SIZE),
+        5 => (x - CUBE_SIZE, y - 2 * CUBE_SIZE),
+        _ => (x, y - 3 * CUBE_SIZE),
+    }
+}
+
+fn face_to_global(x: usize, y: usize, face: usize) -> (usize, usize) {
+    match face {
+        1 => (x + CUBE_SIZE, y),
+        2 => (x + 2 * CUBE_SIZE, y),
+        3 => (x + CUBE_SIZE, y + CUBE_SIZE),
+        4 => (x, y + 2 * CUBE_SIZE),
+        5 => (x + CUBE_SIZE, y + 2 * CUBE_SIZE),
+        _ => (x, y + 3 * CUBE_SIZE),
+    }
+}
+
+fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
+    let face = get_face(x, y);
+    let (xl, yl) = coord_in_face(x, y);
+    match face {
+        1 => match dir {
+            Dir::Right => (x + 1, y, Dir::Right),
+            Dir::Left => {
+                if xl == 0 {
+                    let (nx, ny) = face_to_global(xl, CUBE_SIZE - yl - 1, 4);
+                    (nx, ny, Dir::Right)
+                } else {
+                    (x - 1, y, Dir::Left)
+                }
+            }
+            Dir::Up => {
+                if yl == 0 {
+                    let (nx, ny) = face_to_global(yl, xl, 6);
+                    (nx, ny, Dir::Right)
+                } else {
+                    (x, y - 1, Dir::Up)
+                }
+            }
+            Dir::Down => (x, y + 1, Dir::Down),
+        },
+        2 => match dir {
+            Dir::Right => {
+                if xl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(xl, CUBE_SIZE - yl - 1, 5);
+                    (nx, ny, Dir::Left)
+                } else {
+                    (x + 1, y, Dir::Right)
+                }
+            }
+            Dir::Left => (x - 1, y, Dir::Left),
+            Dir::Up => {
+                if yl == 0 {
+                    let (nx, ny) = face_to_global(xl, CUBE_SIZE - 1, 6);
+                    (nx, ny, Dir::Up)
+                } else {
+                    (x, y - 1, Dir::Up)
+                }
+            }
+            Dir::Down => {
+                if yl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(yl, xl, 3);
+                    (nx, ny, Dir::Left)
+                } else {
+                    (x, y + 1, Dir::Down)
+                }
+            }
+        },
+        3 => match dir {
+            Dir::Right => {
+                if xl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(yl, xl, 2);
+                    (nx, ny, Dir::Up)
+                } else {
+                    (x + 1, y, Dir::Right)
+                }
+            }
+            Dir::Left => {
+                if xl == 0 {
+                    let (nx, ny) = face_to_global(yl, xl, 4);
+                    (nx, ny, Dir::Down)
+                } else {
+                    (x - 1, y, Dir::Left)
+                }
+            }
+            Dir::Up => (x, y - 1, Dir::Up),
+            Dir::Down => (x, y + 1, Dir::Down),
+        },
+        4 => match dir {
+            Dir::Right => (x + 1, y, Dir::Right),
+            Dir::Left => {
+                if xl == 0 {
+                    let (nx, ny) = face_to_global(xl, CUBE_SIZE - yl - 1, 1);
+                    (nx, ny, Dir::Right)
+                } else {
+                    (x - 1, y, Dir::Left)
+                }
+            }
+            Dir::Up => {
+                if yl == 0 {
+                    let (nx, ny) = face_to_global(yl, xl, 3);
+                    (nx, ny, Dir::Right)
+                } else {
+                    (x, y - 1, Dir::Up)
+                }
+            }
+            Dir::Down => (x, y + 1, Dir::Down),
+        },
+        5 => match dir {
+            Dir::Right => {
+                if xl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(xl, CUBE_SIZE - yl - 1, 2);
+                    (nx, ny, Dir::Left)
+                } else {
+                    (x + 1, y, Dir::Right)
+                }
+            }
+            Dir::Left => (x - 1, y, Dir::Left),
+            Dir::Up => (x, y - 1, Dir::Up),
+            Dir::Down => {
+                if yl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(yl, xl, 6);
+                    (nx, ny, Dir::Left)
+                } else {
+                    (x, y + 1, Dir::Down)
+                }
+            }
+        },
+        _ => match dir {
+            Dir::Right => {
+                if xl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(yl, xl, 5);
+                    (nx, ny, Dir::Up)
+                } else {
+                    (x + 1, y, Dir::Right)
+                }
+            }
+            Dir::Left => {
+                if xl == 0 {
+                    let (nx, ny) = face_to_global(yl, xl, 1);
+                    (nx, ny, Dir::Down)
+                } else {
+                    (x - 1, y, Dir::Left)
+                }
+            }
+            Dir::Up => (x, y - 1, Dir::Up),
+            Dir::Down => {
+                if yl == CUBE_SIZE - 1 {
+                    let (nx, ny) = face_to_global(xl, yl, 2);
+                    (nx, ny, Dir::Down)
+                } else {
+                    (x, y + 1, Dir::Down)
+                }
+            }
+        },
+    }
+}
+
 #[derive(Debug)]
 pub struct Player {
     x: usize,
@@ -83,193 +282,10 @@ impl Player {
         }
     }
 
-    fn get_face(x: usize, y: usize) -> usize {
-        if y < CUBE_SIZE {
-            if x < 2 * CUBE_SIZE {
-                return 1;
-            }
-            return 2;
-        }
-        if y < 2 * CUBE_SIZE {
-            return 3;
-        }
-        if y < 3 * CUBE_SIZE {
-            if x < CUBE_SIZE {
-                return 4;
-            }
-            return 5;
-        }
-        6
-    }
-
-    fn coord_in_face(x: usize, y: usize) -> (usize, usize) {
-        let face = Self::get_face(x, y);
-        match face {
-            1 => (x - CUBE_SIZE, y),
-            2 => (x - 2 * CUBE_SIZE, y),
-            3 => (x - CUBE_SIZE, y - CUBE_SIZE),
-            4 => (x, y - 2 * CUBE_SIZE),
-            5 => (x - CUBE_SIZE, y - 2 * CUBE_SIZE),
-            _ => (x, y - 3 * CUBE_SIZE),
-        }
-    }
-
-    fn face_to_global(x: usize, y: usize, face: usize) -> (usize, usize) {
-        match face {
-            1 => (x + CUBE_SIZE, y),
-            2 => (x + 2 * CUBE_SIZE, y),
-            3 => (x + CUBE_SIZE, y + CUBE_SIZE),
-            4 => (x, y + 2 * CUBE_SIZE),
-            5 => (x + CUBE_SIZE, y + 2 * CUBE_SIZE),
-            _ => (x, y + 3 * CUBE_SIZE),
-        }
-    }
-
-    fn next_coord(x: usize, y: usize, dir: &Dir) -> (usize, usize, Dir) {
-        let face = Self::get_face(x, y);
-        let (xl, yl) = Self::coord_in_face(x, y);
-        match face {
-            1 => match dir {
-                Dir::Right => (x + 1, y, Dir::Right),
-                Dir::Left => {
-                    if xl == 0 {
-                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 4);
-                        (nx, ny, Dir::Right)
-                    } else {
-                        (x - 1, y, Dir::Left)
-                    }
-                }
-                Dir::Up => {
-                    if yl == 0 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 6);
-                        (nx, ny, Dir::Right)
-                    } else {
-                        (x, y - 1, Dir::Up)
-                    }
-                }
-                Dir::Down => (x, y + 1, Dir::Down),
-            },
-            2 => match dir {
-                Dir::Right => {
-                    if xl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 5);
-                        (nx, ny, Dir::Left)
-                    } else {
-                        (x + 1, y, Dir::Right)
-                    }
-                }
-                Dir::Left => (x - 1, y, Dir::Left),
-                Dir::Up => {
-                    if yl == 0 {
-                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - 1, 6);
-                        (nx, ny, Dir::Up)
-                    } else {
-                        (x, y - 1, Dir::Up)
-                    }
-                }
-                Dir::Down => {
-                    if yl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 3);
-                        (nx, ny, Dir::Left)
-                    } else {
-                        (x, y + 1, Dir::Down)
-                    }
-                }
-            },
-            3 => match dir {
-                Dir::Right => {
-                    if xl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 2);
-                        (nx, ny, Dir::Up)
-                    } else {
-                        (x + 1, y, Dir::Right)
-                    }
-                }
-                Dir::Left => {
-                    if xl == 0 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 4);
-                        (nx, ny, Dir::Down)
-                    } else {
-                        (x - 1, y, Dir::Left)
-                    }
-                }
-                Dir::Up => (x, y - 1, Dir::Up),
-                Dir::Down => (x, y + 1, Dir::Down),
-            },
-            4 => match dir {
-                Dir::Right => (x + 1, y, Dir::Right),
-                Dir::Left => {
-                    if xl == 0 {
-                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 1);
-                        (nx, ny, Dir::Right)
-                    } else {
-                        (x - 1, y, Dir::Left)
-                    }
-                }
-                Dir::Up => {
-                    if yl == 0 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 3);
-                        (nx, ny, Dir::Right)
-                    } else {
-                        (x, y - 1, Dir::Up)
-                    }
-                }
-                Dir::Down => (x, y + 1, Dir::Down),
-            },
-            5 => match dir {
-                Dir::Right => {
-                    if xl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(xl, CUBE_SIZE - yl - 1, 2);
-                        (nx, ny, Dir::Left)
-                    } else {
-                        (x + 1, y, Dir::Right)
-                    }
-                }
-                Dir::Left => (x - 1, y, Dir::Left),
-                Dir::Up => (x, y - 1, Dir::Up),
-                Dir::Down => {
-                    if yl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 6);
-                        (nx, ny, Dir::Left)
-                    } else {
-                        (x, y + 1, Dir::Down)
-                    }
-                }
-            },
-            _ => match dir {
-                Dir::Right => {
-                    if xl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 5);
-                        (nx, ny, Dir::Up)
-                    } else {
-                        (x + 1, y, Dir::Right)
-                    }
-                }
-                Dir::Left => {
-                    if xl == 0 {
-                        let (nx, ny) = Self::face_to_global(yl, xl, 1);
-                        (nx, ny, Dir::Down)
-                    } else {
-                        (x - 1, y, Dir::Left)
-                    }
-                }
-                Dir::Up => (x, y - 1, Dir::Up),
-                Dir::Down => {
-                    if yl == CUBE_SIZE - 1 {
-                        let (nx, ny) = Self::face_to_global(xl, yl, 2);
-                        (nx, ny, Dir::Down)
-                    } else {
-                        (x, y + 1, Dir::Down)
-                    }
-                }
-            },
-        }
-    }
-
     fn walk2(&mut self, dist: &usize, grid: &[Vec<Tile>]) {
         let mut remaining = *dist;
         while remaining > 0 {
-            let (next_x, next_y, next_dir) = Self::next_coord(self.x, self.y, &self.dir);
+            let (next_x, next_y, next_dir) = next_coord(self.x, self.y, &self.dir);
             let next_tile = &grid[next_y][next_x];
             match next_tile {
                 Tile::Free => {
