@@ -445,6 +445,7 @@ impl Day for Day22 {
 
     type Output1 = usize;
 
+    /// Part 1 took 1.4419ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let grid = &input.0;
         let instr = &input.1;
@@ -464,6 +465,7 @@ impl Day for Day22 {
 
     type Output2 = usize;
 
+    /// Part 2 took 0.0815ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         let grid = &input.0;
         let instr = &input.1;
