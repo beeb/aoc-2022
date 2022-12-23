@@ -115,12 +115,10 @@ fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -
     let moves = moves
         .into_iter()
         .sorted_unstable_by(|a, b| a.0.cmp(&b.0))
-        .dedup_by_with_count(|a, b| a.0 == b.0);
-    for (count, (next, elf_idx)) in moves {
-        // only consider moves that are unique (no collisions)
-        if count > 1 {
-            continue;
-        }
+        .dedup_by_with_count(|a, b| a.0 == b.0)
+        .filter(|(count, _)| *count == 1) // only keep non-collision moves
+        .map(|(_, m)| m);
+    for (next, elf_idx) in moves {
         // move the elf, updating the positions hashmap too
         let elf = elves.get_mut(elf_idx).unwrap();
         elves_pos.remove(&elf.pos);
