@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 use itertools::{Itertools, MinMaxResult::MinMax};
 use nom::{
@@ -25,21 +25,11 @@ pub struct Point {
     pub y: i64,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct Elf {
-    pub pos: Point,
-}
+/// alias for Point to convey there is an elf currently in this position
+type ElfPosition = Point;
 
-impl Elf {
-    pub fn new(x: i64, y: i64) -> Self {
-        Self {
-            pos: Point { x, y },
-        }
-    }
-}
-
-/// For fast searching, we keep the positions in a HashMap
-type ElvesPos = HashMap<Point, usize>;
+/// For fast searching, we keep the positions in a HashSet
+type Elves = HashSet<ElfPosition>;
 
 trait Searchable {
     fn get_elves_area(&self) -> usize;
@@ -48,13 +38,13 @@ trait Searchable {
     fn has_elf_on_side(&self, x: i64, y: i64, offsets: &[Offset; 3]) -> bool;
 }
 
-impl Searchable for ElvesPos {
+impl Searchable for Elves {
     /// Get the area occupied by the elves
     fn get_elves_area(&self) -> usize {
-        let MinMax(min_x, max_x) = self.keys().minmax_by_key(|p| p.x) else {
+        let MinMax(min_x, max_x) = self.iter().minmax_by_key(|p| p.x) else {
             unimplemented!("Missing elves, no min and max found");
         };
-        let MinMax(min_y, max_y) = self.keys().minmax_by_key(|p| p.y) else {
+        let MinMax(min_y, max_y) = self.iter().minmax_by_key(|p| p.y) else {
             unimplemented!("Missing elves, no min and max found");
         };
         ((max_x.x - min_x.x + 1) * (max_y.y - min_y.y + 1)) as usize
@@ -62,7 +52,7 @@ impl Searchable for ElvesPos {
 
     /// Check if there is an elf at x, y
     fn has_elf_at_pos(&self, x: i64, y: i64) -> bool {
-        self.contains_key(&Point { x, y })
+        self.contains(&ElfPosition { x, y })
     }
 
     /// Check if there is any elf around
@@ -84,28 +74,28 @@ impl Searchable for ElvesPos {
 }
 
 /// Diffuse the elves, with their first considered direction being dir_counter (mod 4)
-fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -> bool {
-    // store the desired moves in a Vec (second element in the tuple is the position of the elf in the elves Vec)
-    let mut moves = Vec::<(Point, usize)>::new();
+fn move_elves(elves: &mut Elves, dir_counter: usize) -> bool {
+    // store the desired moves in a Vec (second element in the tuple is the elf's current position)
+    let mut moves = Vec::<(Point, ElfPosition)>::new();
     // we want to check if any elf had the opportunity to move
     let mut has_moved = false;
-    for (idx, elf) in elves.iter().enumerate() {
+    for elf in elves.iter() {
         // in case there are no elves around, the elf doesn't move
-        if !elves_pos.has_elf_around(elf.pos.x, elf.pos.y) {
+        if !elves.has_elf_around(elf.x, elf.y) {
             continue;
         }
         // try each of the 4 directions, starting with dir_counter (mod 4)
         for i in 0..4 {
             let dirs = DIRS[(dir_counter + i) % 4];
             // check if there are any elves in that direction
-            if !elves_pos.has_elf_on_side(elf.pos.x, elf.pos.y, &dirs) {
+            if !elves.has_elf_on_side(elf.x, elf.y, &dirs) {
                 // only if there are no elves in the 3 tiles on that side, we
                 // propose a move at elf.pos.x + dirs[1].0, elf.pos.y + dirs[1].1
                 let next = Point {
-                    x: elf.pos.x + dirs[1].0,
-                    y: elf.pos.y + dirs[1].1,
+                    x: elf.x + dirs[1].0,
+                    y: elf.y + dirs[1].1,
                 };
-                moves.push((next, idx));
+                moves.push((next, elf.clone()));
                 break;
             }
         }
@@ -118,12 +108,10 @@ fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -
         .dedup_by_with_count(|a, b| a.0 == b.0)
         .filter(|(count, _)| *count == 1) // only keep non-collision moves
         .map(|(_, m)| m);
-    for (next, elf_idx) in moves {
-        // move the elf, updating the positions hashmap too
-        let elf = elves.get_mut(elf_idx).unwrap();
-        elves_pos.remove(&elf.pos);
-        elves_pos.insert(next.clone(), elf_idx);
-        elf.pos = next;
+    for (next, elf) in moves {
+        // move the elf
+        elves.remove(&elf);
+        elves.insert(next);
         has_moved = true;
     }
     // return if any elf was moved
@@ -133,15 +121,18 @@ fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -
 pub struct Day23;
 
 impl Day for Day23 {
-    type Input = Vec<Elf>;
+    type Input = Elves;
 
     fn parse(input: &str) -> IResult<&str, Self::Input> {
         let (rest, elements) = separated_list0(line_ending, many1(one_of(".#")))(input)?;
-        let mut elves = Vec::<Elf>::new();
+        let mut elves = Elves::new();
         for (y, row) in elements.iter().enumerate() {
             for (x, elem) in row.iter().enumerate() {
                 if elem == &'#' {
-                    elves.push(Elf::new(x as i64, y as i64));
+                    elves.insert(ElfPosition {
+                        x: x as i64,
+                        y: y as i64,
+                    });
                 }
             }
         }
@@ -150,39 +141,27 @@ impl Day for Day23 {
 
     type Output1 = usize;
 
-    /// Part 1 took 4.4991ms
+    /// Part 1 took 4.1408ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         // let's clone the elves to get a mutable version
         let mut elves = input.clone();
-        // we keep track of the elf index in a hashmap with its position as the key (for searching)
-        let mut elves_pos = ElvesPos::new();
-        // populate the positions hashmap
-        for (idx, elf) in elves.iter().enumerate() {
-            elves_pos.insert(elf.pos.clone(), idx);
-        }
         // 10 rounds of diffusion
         for dir_counter in 0..10 {
-            move_elves(&mut elves, &mut elves_pos, dir_counter);
+            move_elves(&mut elves, dir_counter);
         }
         // get the number of free positions
-        elves_pos.get_elves_area() - elves.len()
+        elves.get_elves_area() - elves.len()
     }
 
     type Output2 = usize;
 
-    /// Part 2 took 463.5234ms
+    /// Part 2 took 467.35483ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // let's clone the elves to get a mutable version
         let mut elves = input.clone();
-        // we keep track of the elf index in a hashmap with its position as the key (for searching)
-        let mut elves_pos = ElvesPos::new();
-        // populate the positions hashmap
-        for (idx, elf) in elves.iter().enumerate() {
-            elves_pos.insert(elf.pos.clone(), idx);
-        }
         // we iterate until no more elves move
         let mut dir_counter = 0;
-        while move_elves(&mut elves, &mut elves_pos, dir_counter) {
+        while move_elves(&mut elves, dir_counter) {
             dir_counter += 1;
         }
         // return the number (starts at 1) of the first round where no elf moved
