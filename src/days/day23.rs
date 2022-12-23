@@ -155,7 +155,7 @@ impl Day for Day23 {
 
     type Output2 = usize;
 
-    /// Part 2 took 467.35483ms
+    /// Part 2 took 454.4375ms
     fn part_2(input: &Self::Input) -> Self::Output2 {
         // let's clone the elves to get a mutable version
         let mut elves = input.clone();
