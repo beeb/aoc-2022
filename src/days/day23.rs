@@ -13,13 +13,13 @@ type Offset = (i64, i64);
 
 /// North - South - West - East
 const DIRS: [[Offset; 3]; 4] = [
-    [(-1, -1), (0, -1), (1, -1)],
-    [(-1, 1), (0, 1), (1, 1)],
-    [(-1, -1), (-1, 0), (-1, 1)],
-    [(1, -1), (1, 0), (1, 1)],
+    [(-1, -1), (0, -1), (1, -1)], // NW, N, NE
+    [(-1, 1), (0, 1), (1, 1)],    // SW, S, SE
+    [(-1, -1), (-1, 0), (-1, 1)], // NW, W, SW
+    [(1, -1), (1, 0), (1, 1)],    // NE, E, SE
 ];
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Point {
     pub x: i64,
     pub y: i64,
@@ -84,6 +84,43 @@ impl Searchable for ElvesPos {
     }
 }
 
+fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -> bool {
+    let mut moves = Vec::<(Point, usize)>::new();
+    let mut has_moved = false;
+    for (idx, elf) in elves.iter().enumerate() {
+        if !elves_pos.has_elf_around(elf.pos.x, elf.pos.y) {
+            continue;
+        }
+        for i in 0..4 {
+            let dirs = DIRS[(dir_counter + i) % 4];
+            if !elves_pos.has_elf_on_side(elf.pos.x, elf.pos.y, &dirs) {
+                // propose move at elf.pos.x + dirs[1].0, elf.pos.y + dirs[1].1
+                let next = Point {
+                    x: elf.pos.x + dirs[1].0,
+                    y: elf.pos.y + dirs[1].1,
+                };
+                moves.push((next, idx));
+                break;
+            }
+        }
+    }
+    let moves = moves
+        .into_iter()
+        .sorted_unstable_by(|a, b| a.0.cmp(&b.0))
+        .dedup_by_with_count(|a, b| a.0 == b.0);
+    for (count, (next, elf_idx)) in moves {
+        if count > 1 {
+            continue;
+        }
+        let elf = elves.get_mut(elf_idx).unwrap();
+        elves_pos.remove(&elf.pos);
+        elves_pos.insert(next.clone(), elf_idx);
+        elf.pos = next;
+        has_moved = true;
+    }
+    has_moved
+}
+
 pub struct Day23;
 
 impl Day for Day23 {
@@ -111,34 +148,7 @@ impl Day for Day23 {
             elves_pos.insert(elf.pos.clone(), idx);
         }
         for dir_counter in 0..10 {
-            let mut moves = Vec::<(Point, usize)>::new();
-            for (idx, elf) in elves.iter().enumerate() {
-                if !elves_pos.has_elf_around(elf.pos.x, elf.pos.y) {
-                    continue;
-                }
-                for i in 0..4 {
-                    let dirs = DIRS[(dir_counter + i) % 4];
-                    if !elves_pos.has_elf_on_side(elf.pos.x, elf.pos.y, &dirs) {
-                        // propose move at elf.pos.x + dirs[1].0, elf.pos.y + dirs[1].1
-                        let next = Point {
-                            x: elf.pos.x + dirs[1].0,
-                            y: elf.pos.y + dirs[1].1,
-                        };
-                        moves.push((next, idx));
-                        break;
-                    }
-                }
-            }
-            let moves = moves.into_iter().dedup_by_with_count(|a, b| a.0 == b.0);
-            for (count, (next, elf_idx)) in moves {
-                if count > 1 {
-                    continue;
-                }
-                let elf = elves.get_mut(elf_idx).unwrap();
-                elves_pos.remove(&elf.pos);
-                elves_pos.insert(next.clone(), elf_idx);
-                elf.pos = next;
-            }
+            move_elves(&mut elves, &mut elves_pos, dir_counter);
         }
         let (top_left, bottom_right) = elves_pos.get_elves_bounds();
         ((bottom_right.x - top_left.x + 1) * (bottom_right.y - top_left.y + 1)) as usize
@@ -147,7 +157,16 @@ impl Day for Day23 {
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut elves = input.clone();
+        let mut elves_pos = HashMap::<Point, usize>::new();
+        for (idx, elf) in elves.iter().enumerate() {
+            elves_pos.insert(elf.pos.clone(), idx);
+        }
+        let mut dir_counter = 0;
+        while move_elves(&mut elves, &mut elves_pos, dir_counter) {
+            dir_counter += 1;
+        }
+        dir_counter + 1
     }
 }
