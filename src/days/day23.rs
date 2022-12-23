@@ -85,7 +85,7 @@ impl Searchable for ElvesPos {
 
 /// Diffuse the elves, with their first considered direction being dir_counter (mod 4)
 fn move_elves(elves: &mut [Elf], elves_pos: &mut ElvesPos, dir_counter: usize) -> bool {
-    // store the desired moves in a Vec
+    // store the desired moves in a Vec (second element in the tuple is the position of the elf in the elves Vec)
     let mut moves = Vec::<(Point, usize)>::new();
     // we want to check if any elf had the opportunity to move
     let mut has_moved = false;
