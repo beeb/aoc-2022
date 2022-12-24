@@ -29,6 +29,7 @@ impl Point {
         (self.x.max(other.x) - self.x.min(other.x)) + (self.y.max(other.y) - self.y.min(other.y))
     }
 
+    /// Get a new point in the direction passed as argument
     fn at_dir(&self, dir: (isize, isize)) -> Point {
         Point {
             x: self.x + dir.0,
@@ -37,6 +38,7 @@ impl Point {
     }
 }
 
+/// A blizzard instance, with its starting coordinates as the value
 #[derive(Debug)]
 pub enum Blizzard {
     Up(Point),
@@ -45,6 +47,9 @@ pub enum Blizzard {
     Left(Point),
 }
 
+/// Get the set of all points occupied by some blizzard at a given timestep
+///
+/// A cache is passed so that previous timesteps are not calculated more than once
 fn blizz_at_ts<'a>(
     blizz: &[Blizzard],
     blizz_cache: &'a mut Vec<HashSet<Point>>,
@@ -60,7 +65,7 @@ fn blizz_at_ts<'a>(
         let res = match b {
             Blizzard::Up(start_pos) => Point {
                 x: start_pos.x,
-                y: (start_pos.y - timestep as isize).rem_euclid(HEIGHT as isize),
+                y: (start_pos.y - timestep as isize).rem_euclid(HEIGHT as isize), // wrap around
             },
             Blizzard::Right(start_pos) => Point {
                 x: (start_pos.x + timestep as isize).rem_euclid(WIDTH as isize),
@@ -77,6 +82,7 @@ fn blizz_at_ts<'a>(
         };
         set.insert(res);
     }
+    // save the cache
     blizz_cache.push(set);
     blizz_cache.last().unwrap()
 }
@@ -88,7 +94,8 @@ pub struct Game {
     end: Point,
 }
 
-/// An open position, with its coordinates as a `Point` and the f-score or expected cost to reach the end position.
+/// An open position, with its coordinates as a `Point`, the timestep, and the f-score
+/// or expected cost to reach the end position.
 #[derive(Debug)]
 pub struct OpenPos {
     point: Point,
@@ -117,6 +124,7 @@ impl Ord for OpenPos {
 }
 
 impl OpenPos {
+    /// Check all possible moves at a given time (including not moving if possible)
     fn valid_neighbors(
         &self,
         blizz: &[Blizzard],
@@ -129,6 +137,7 @@ impl OpenPos {
         let blizz = blizz_at_ts(blizz, blizz_cache, timestep);
         for dir in DIRS {
             let next = self.point.at_dir(dir);
+            // exclude out of bounds (except for start and end points)
             if (next.y < 0 && next.x != start_x)
                 || (next.y >= HEIGHT as isize && next.x != end_x)
                 || next.x < 0
@@ -136,6 +145,7 @@ impl OpenPos {
             {
                 continue;
             }
+            // exclude if blizzard is there
             if blizz.contains(&next) {
                 continue;
             }
@@ -164,6 +174,7 @@ fn path(
     path
 }
 
+/// A-star, see day 12 for full description (we use a combination of position and time instead of just position)
 fn a_star(
     blizz: &[Blizzard],
     blizz_cache: &mut Vec<HashSet<Point>>,
@@ -174,12 +185,12 @@ fn a_star(
     let mut open_set = BinaryHeap::<OpenPos>::new();
     open_set.push(OpenPos {
         point: start.clone(),
-        cost: start_timestep as isize + start.distance_to(end), // f-score, which is the expected cost to reach the End node
         timestep: start_timestep,
+        cost: start_timestep as isize + start.distance_to(end), // f-score, which is the expected cost to reach the End node
     });
     // this map stores the path dependencies so we can reconstruct it later
     let mut came_from = HashMap::<(Point, usize), (Point, usize)>::new();
-    // this map stores the g-score (or the elapsed time) for each visited Point
+    // this map stores the g-score (quantity to minimize: the elapsed time) for each visited Point
     let mut g_score = HashMap::<(Point, usize), isize>::new();
     g_score.insert((start.clone(), start_timestep), start_timestep as isize);
 
@@ -194,7 +205,7 @@ fn a_star(
                 blizz,
                 blizz_cache,
                 current.timestep + 1,
-                start.x.min(end.x),
+                start.x.min(end.x), // we hardcode that the start position (at the top of the grid, has the smaller x)
                 start.x.max(end.x),
             )
             .iter()
