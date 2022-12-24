@@ -122,13 +122,14 @@ impl OpenPos {
         blizz: &[Blizzard],
         blizz_cache: &mut Vec<HashSet<Point>>,
         timestep: usize,
+        start_x: isize,
         end_x: isize,
     ) -> Vec<Point> {
         let mut n = Vec::<Point>::with_capacity(4);
         let blizz = blizz_at_ts(blizz, blizz_cache, timestep);
         for dir in DIRS {
             let next = self.point.at_dir(dir);
-            if next.y < 0
+            if (next.y < 0 && next.x != start_x)
                 || (next.y >= HEIGHT as isize && next.x != end_x)
                 || next.x < 0
                 || next.x >= WIDTH as isize
@@ -163,19 +164,24 @@ fn path(
     path
 }
 
-fn a_star(blizz: &[Blizzard], start: &Point, end: &Point) -> Option<usize> {
-    let mut blizz_cache = Vec::<HashSet<Point>>::new();
+fn a_star(
+    blizz: &[Blizzard],
+    blizz_cache: &mut Vec<HashSet<Point>>,
+    start: &Point,
+    end: &Point,
+    start_timestep: usize,
+) -> Option<usize> {
     let mut open_set = BinaryHeap::<OpenPos>::new();
     open_set.push(OpenPos {
         point: start.clone(),
-        cost: start.distance_to(end), // f-score, which is the expected cost to reach the End node
-        timestep: 0,
+        cost: start_timestep as isize + start.distance_to(end), // f-score, which is the expected cost to reach the End node
+        timestep: start_timestep,
     });
     // this map stores the path dependencies so we can reconstruct it later
     let mut came_from = HashMap::<(Point, usize), (Point, usize)>::new();
     // this map stores the g-score (or the elapsed time) for each visited Point
     let mut g_score = HashMap::<(Point, usize), isize>::new();
-    g_score.insert((start.clone(), 0), 0);
+    g_score.insert((start.clone(), start_timestep), start_timestep as isize);
 
     while let Some(current) = open_set.pop() {
         if current.point == *end {
@@ -184,7 +190,13 @@ fn a_star(blizz: &[Blizzard], start: &Point, end: &Point) -> Option<usize> {
         }
 
         for n in current
-            .valid_neighbors(blizz, &mut blizz_cache, current.timestep + 1, end.x)
+            .valid_neighbors(
+                blizz,
+                blizz_cache,
+                current.timestep + 1,
+                start.x.min(end.x),
+                start.x.max(end.x),
+            )
             .iter()
         {
             let tentative_gscore = g_score[&(current.point.clone(), current.timestep)] + 1;
@@ -268,12 +280,31 @@ impl Day for Day24 {
     type Output1 = usize;
 
     fn part_1(input: &Self::Input) -> Self::Output1 {
-        a_star(&input.blizz, &input.start, &input.end).unwrap()
+        let mut blizz_cache = Vec::<HashSet<Point>>::new();
+        a_star(&input.blizz, &mut blizz_cache, &input.start, &input.end, 0).unwrap()
     }
 
     type Output2 = usize;
 
-    fn part_2(_input: &Self::Input) -> Self::Output2 {
-        unimplemented!("part_2")
+    fn part_2(input: &Self::Input) -> Self::Output2 {
+        let mut blizz_cache = Vec::<HashSet<Point>>::new();
+        let first = a_star(&input.blizz, &mut blizz_cache, &input.start, &input.end, 0).unwrap();
+        let second = a_star(
+            &input.blizz,
+            &mut blizz_cache,
+            &input.end,
+            &input.start,
+            first,
+        )
+        .unwrap();
+        let third = a_star(
+            &input.blizz,
+            &mut blizz_cache,
+            &input.start,
+            &input.end,
+            first + second,
+        )
+        .unwrap();
+        first + second + third
     }
 }
