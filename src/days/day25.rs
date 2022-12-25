@@ -69,9 +69,11 @@ impl Day for Day25 {
 
     type Output1 = String;
 
+    /// Part 1 took 0.016806ms
     fn part_1(input: &Self::Input) -> Self::Output1 {
         let sum = input.iter().map(|s| snafu_to_decimal(s)).sum::<i64>();
         let snafu = decimal_to_snafu(sum as u64);
+        // convert -2 to +2 into characters and collect into a string
         String::from_iter(snafu.into_iter().map(|d| match d {
             -2 => '=',
             -1 => '-',
@@ -82,10 +84,10 @@ impl Day for Day25 {
         }))
     }
 
-    type Output2 = usize;
+    type Output2 = String;
 
     fn part_2(_input: &Self::Input) -> Self::Output2 {
-        0
+        "Congratulations!".to_string()
     }
 }
 
