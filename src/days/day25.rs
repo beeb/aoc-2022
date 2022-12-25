@@ -47,7 +47,7 @@ fn decimal_to_snafu(input: u64) -> Vec<i8> {
         }
     }
     // we expect the value to have the most significant digit first, so we reverse and skip all zeroes
-    out.into_iter().rev().skip_while(|&i| i == 0).collect_vec()
+    out.into_iter().rev().skip_while(|&d| d == 0).collect_vec()
 }
 
 pub struct Day25;
