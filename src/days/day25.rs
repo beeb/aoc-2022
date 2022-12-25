@@ -8,6 +8,9 @@ use nom::{
 
 use crate::days::Day;
 
+/// Convert a snafu into decimal
+///
+/// We simply need to sum each position multiplied by 5 to the power of the position (starting at 0)
 fn snafu_to_decimal(input: &[i8]) -> i64 {
     input
         .iter()
@@ -17,63 +20,30 @@ fn snafu_to_decimal(input: &[i8]) -> i64 {
         .sum()
 }
 
+/// Convert a decimal number into snafu (i8 representation, so no '=' and '-' just yet)
 fn decimal_to_snafu(input: u64) -> Vec<i8> {
-    // 2022         1=11-2
-    // 2022 % 1 = 0
-    // 2022 / 1 = 2022
-    // 2022 % 5 = 2
-    // 2022 / 5 = 404
-    // 2022 % 25 = 22
-    // 2022 / 25 = 80
-    // 2022 % 125 = 22
-    // 2022 / 125 = 16
-    // 2022 % 625 = 147
-    // 2022 / 625 = 3
-    // 2022 % 3125 = 2022
-    // 2022 / 3125 = 0
-
-    // ======== pos 0
-    // 2022 % 5^(pos+1) = 2
-    // 2 / 5^pos = 2
-    // 2 <= 2 :: +2
-    // 000002
-    // ======== pos 1
-    // 2020 % 25 = 20
-    // 20 / 5 = 4
-    // 4 > 2 :: 4 - 5 = -1
-    // 4 > 2 :: next digit +1
-    // 0001-2
-    // ======== pos 2
-    // 2000 % 125 = 0
-    // 0 / 25 = 0
-    // 0 <= 2 :: +0
-    // 0001-2
-    // ======== pos 3
-    // 2000 % 625 = 125
-    // 125 / 125 = 1
-    // 1 < 2 :: 1
-    // 0011-2
-    // ======== pos 4
-    // 1875 % 3125 = 1875
-    // 1875 / 625 = 3
-    // 3 > 2 :: 5 - 3 = -2
-    // 3 > 2 :: next digit +1
-    // 1=11-2
     let mut out = vec![0i8; 20]; // reversed (right to left)
     let mut remaining = input;
     for pos in 0.. {
+        // "rem" is what we need to encode at the current position since it would not fit in the next position.
+        // we thus take the remainder of the division by the next position's factor 5^(pos+1)
         let rem = remaining % 5u64.pow(pos + 1);
+        // we divide this remainder by the current factor to know what to put in this position as value
         let div = rem / 5u64.pow(pos);
         out[pos as usize] += div as i8;
+        // since we can only encode -2 to 2, we need to carry over in case the value is above 2
         if out[pos as usize] > 2 {
-            out[pos as usize] -= 5;
-            out[pos as usize + 1] += 1;
+            out[pos as usize] -= 5; // return into the range
+            out[pos as usize + 1] += 1; // carry over to the next position
         }
+        // what's left to encode is decremented by what we just encoded into this position
         remaining -= rem;
+        // we can stop when we have encoded the full value
         if remaining == 0 {
             break;
         }
     }
+    // we expect the value to have the most significant digit first, so we reverse and skip all zeroes
     out.into_iter().rev().skip_while(|&i| i == 0).collect_vec()
 }
 
