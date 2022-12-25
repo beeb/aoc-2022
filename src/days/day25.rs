@@ -25,7 +25,8 @@ fn decimal_to_snafu(input: u64) -> Vec<i8> {
     let mut out = vec![0i8; 20]; // reversed (right to left)
     let mut remaining = input;
     for pos in 0.. {
-        // "rem" is what we need to encode at the current position since it would not fit in the next position.
+        // "rem" is what we need to encode at the current position since
+        // it's smaller than the resolution of the next position.
         // we thus take the remainder of the division by the next position's factor 5^(pos+1)
         let rem = remaining % 5u64.pow(pos + 1);
         // we divide this remainder by the current factor to know what to put in this position as value
