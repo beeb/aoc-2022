@@ -22,6 +22,7 @@ fn snafu_to_decimal(input: &[i8]) -> i64 {
 
 /// Convert a decimal number into snafu (i8 representation, so no '=' and '-' just yet)
 fn decimal_to_snafu(input: u64) -> Vec<i8> {
+    // get the fifth root of the decimal input, ceil and add 1 to get the maximum number of digits a snafu can have
     let digits = ((input as f64).powf(1. / 5.).ceil()) as usize + 1;
     let mut out = vec![0i8; digits]; // reversed (right to left)
     let mut remaining = input;
