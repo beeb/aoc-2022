@@ -2,18 +2,18 @@
 name = "aoc_2022"
 version = "0.1.0"
 edition = "2021"
-authors = ["Valentin Bersier <vbersier@gmail.com>"]
+authors = ["Valentin Bersier <hi@beeb.li>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nom = "7"
-itertools = "0.10"
-clap = { version = "4", features = ["derive"] }
+bitvec = "1"
 chrono = "0.4"
-reqwest = { version = "0.11", features = ["blocking"] }
+clap = { version = "4", features = ["derive"] }
 colored = "2"
 colorous = "1"
+itertools = "0.11"
+nom = "7"
 petgraph = "0.6"
-bitvec = "1"
 rayon = "1"
+reqwest = { version = "0.11", features = ["blocking"] }
